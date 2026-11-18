@@ -76,12 +76,24 @@ to render it on your own pictures.*
 
 Requires Python 3.9+.
 
+Linux / macOS:
+
 ```bash
 git clone https://github.com/karemdm/nutrilabel-ocr.git
 cd nutrilabel-ocr
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -e ".[rapidocr]"          # light, fast, CPU-only: a good first engine
+```
+
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/karemdm/nutrilabel-ocr.git
+cd nutrilabel-ocr
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -e ".[rapidocr]"
 ```
 
 Pick the engines you want; extras can be combined (`pip install -e ".[paddle,tesseract]"`):
@@ -313,18 +325,30 @@ OCR latency.
 | Engine | F1 | Precision | Recall | Perfect labels | OCR value recall | OCR s/img |
 |---|---:|---:|---:|---:|---:|---:|
 | Reference OCR (Google Cloud Vision tokens shipped with the dataset)* | **0.834** | 0.887 | 0.787 | 41.9 % | 98.0 % | - |
-| `paddleocr`, `rapidocr`, `surya`, `doctr`, `easyocr`, `tesseract` | run `make benchmark` | | | | | |
+| `rapidocr` (ONNX, CPU) | **0.730** | 0.856 | 0.636 | 17.6 % | 88.3 % | 5.7 |
+| `doctr` | 0.699 | 0.808 | 0.617 | 18.1 % | 80.6 % | 4.1 |
+| `easyocr` | 0.544 | 0.677 | 0.454 | 6.0 % | 52.3 % | 8.6 |
+| `paddleocr`, `surya`, `tesseract` | run `make benchmark` | | | | | |
 | `paddleocr-vl`, `olmocr`, `glm-ocr`, `chandra`, ... (GPU) | run `python -m benchmark.run --engines all-vlm` | | | | | |
 
 \* The reference row feeds the dataset's own OCR tokens to the extractor, so it measures
 the **extraction** quality with near-perfect OCR: about 4 out of 5 annotated values are
 recovered, with ~89 % precision, on real photos, without any training. The extractor was
-tuned on the train split only; the test split was held out. The open-source engine rows
-are produced by running the benchmark on your machine (it downloads 650 MB of images and
-the engines' models), which also fills [docs/benchmark_results.md](docs/benchmark_results.md)
-and the charts below.
+tuned on the train split only; the test split was held out. The open-source rows were run
+on CPU (OCR time is the median per image); the light `rapidocr` engine gets closest to the
+reference. Other engines can be added by running the benchmark on your machine (it downloads
+650 MB of images and the engines' models), which also updates
+[docs/benchmark_results.md](docs/benchmark_results.md) and the charts below.
+
+<p align="center"><img src="docs/assets/f1_vs_latency.png" alt="F1 versus OCR time per engine" width="560"></p>
 
 <p align="center"><img src="docs/assets/per_nutrient_f1.png" alt="F1 per nutrient" width="720"></p>
+
+Real photos from the test split read by `rapidocr` (values highlighted in the colour of their nutrient):
+
+<p align="center"><img src="docs/assets/real_examples.gif" alt="Real Open Food Facts photos read by rapidocr" width="820"></p>
+
+<sub>Photos: Open Food Facts contributors, via the `openfoodfacts/nutrient-detection-layout` dataset (CC BY-SA 3.0).</sub>
 
 Reproduce everything:
 
