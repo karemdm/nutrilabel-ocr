@@ -66,6 +66,10 @@ the original and what was read**, with every detected value highlighted in the c
 its nutrient, next to the extracted table, the warnings raised by the sanity checks and the
 timings. A summary table compares all images, and results export to CSV or JSON.
 
+<p align="center"><img src="docs/assets/demo_ui.gif" alt="nutrilabel web interface in use: six real photos read with rapidocr, the side-by-side view, a docTR comparison and the CSV export" width="900"></p>
+
+*The interface in use on six real Open Food Facts photos (CC BY-SA 3.0): reading with `rapidocr`, the three views, a second engine (`doctr`) for comparison and the CSV export. Reading is sped up in the recording.*
+
 <p align="center"><img src="docs/assets/ui.png" alt="nutrilabel web interface: original photo, extraction and nutrient table" width="900"></p>
 
 *The real interface, rendered by `scripts/make_ui_snapshot.py` on sample package photos
