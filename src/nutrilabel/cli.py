@@ -1,5 +1,8 @@
 """Command line interface (no GUI needed).
 
+Exit status of ``read``: 0 when every image gave at least one value, 1 when an image failed
+or had no values, 2 when no image was found or the options are invalid.
+
     nutrilabel read label.jpg                       # best installed engine
     nutrilabel read label.jpg --engine tesseract --json
     nutrilabel read label.jpg --annotate out.png    # save a visual check
@@ -19,6 +22,7 @@ from nutrilabel import __version__
 
 
 def _cmd_engines(_: argparse.Namespace) -> int:
+    """Print every engine, whether its library is installed, and how to install it."""
     from nutrilabel.engines import ENGINES, PREFERENCE, VLM_ENGINES
 
     print(f"{'engine':<13} {'installed':<10} install with")
@@ -34,6 +38,7 @@ def _cmd_engines(_: argparse.Namespace) -> int:
 
 
 def _cmd_ui(args: argparse.Namespace) -> int:
+    """Start the local web interface."""
     from nutrilabel.ui import serve
 
     serve(host=args.host, port=args.port, engine=args.engine, open_browser=not args.no_browser)
@@ -57,11 +62,16 @@ def collect_images(paths: list[str]) -> list[Path]:
 
 
 def _cmd_read(args: argparse.Namespace) -> int:
+    """Read one or more images/folders; print tables or JSON and optionally write CSV/PNGs."""
     from nutrilabel.pipeline import NutritionReader
 
     images = collect_images(args.images)
     if not images:
         print("no images found", file=sys.stderr)
+        return 2
+    if args.annotate and len(images) > 1:
+        print("error: --annotate saves one image; use --out-dir for several inputs",
+              file=sys.stderr)
         return 2
     reader = NutritionReader(
         engine=args.engine,
@@ -120,6 +130,7 @@ def _write_csv(path: str, rows: list[dict]) -> None:
 
 
 def _print_table(path: str, result) -> None:
+    """Print one image's extracted fields as a plain-text table."""
     engine = result.ocr.engine if result.ocr else "?"
     secs = result.ocr.elapsed_s if result.ocr else 0.0
     print(f"\n{path}  (engine: {engine}, OCR {secs:.2f}s)")
@@ -134,6 +145,7 @@ def _print_table(path: str, result) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the ``nutrilabel`` command; returns the process exit status."""
     parser = argparse.ArgumentParser(
         prog="nutrilabel", description="Read nutrition facts tables from product photos."
     )
@@ -146,21 +158,26 @@ def main(argv: list[str] | None = None) -> int:
                         help="auto | paddleocr | rapidocr | surya | doctr | easyocr | tesseract | "
                              "paddleocr-vl | olmocr | glm-ocr | chandra | nanonets-ocr | "
                              "deepseek-ocr | qwen-vl | vlm  (see `nutrilabel engines`)")
-    p_read.add_argument("--lang", default=None, help="comma separated, e.g. en,fr,de")
-    p_read.add_argument("--max-side", type=int, default=1600)
+    p_read.add_argument("--lang", default=None,
+                        help="comma separated languages for engines that need them, e.g. en,fr,de "
+                             "(default: en,fr,de,es,it,nl,pt)")
+    p_read.add_argument("--max-side", type=int, default=1600,
+                        help="longest image side sent to the OCR, in pixels (default: 1600)")
     p_read.add_argument("--no-rotate", action="store_true", help="disable the rotation retry")
     p_read.add_argument("--json", action="store_true", help="print JSON instead of a table")
     p_read.add_argument("--with-ocr", action="store_true", help="include raw OCR words in JSON")
-    p_read.add_argument("--annotate", metavar="PNG", help="save an annotated image (one input)")
+    p_read.add_argument("--annotate", metavar="PNG", help="save an annotated image (single input only)")
     p_read.add_argument("--out-dir", metavar="DIR", help="save one annotated PNG per image here")
     p_read.add_argument("--csv", metavar="FILE", help="write one row per image to a CSV file")
     p_read.add_argument("-q", "--quiet", action="store_true", help="no per-image table")
     p_read.set_defaults(func=_cmd_read)
 
     p_ui = sub.add_parser("ui", help="open the local web interface (single image or folder)")
-    p_ui.add_argument("-e", "--engine", default="auto")
-    p_ui.add_argument("--host", default="127.0.0.1")
-    p_ui.add_argument("--port", type=int, default=8765)
+    p_ui.add_argument("-e", "--engine", default="auto",
+                      help="engine preselected in the page (default: auto, best installed classic engine)")
+    p_ui.add_argument("--host", default="127.0.0.1",
+                      help="address to bind (default: 127.0.0.1; use 0.0.0.0 only in a container)")
+    p_ui.add_argument("--port", type=int, default=8765, help="port (default: 8765)")
     p_ui.add_argument("--no-browser", action="store_true", help="do not open a browser tab")
     p_ui.set_defaults(func=_cmd_ui)
 

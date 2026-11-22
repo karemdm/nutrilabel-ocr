@@ -88,6 +88,13 @@ def test_visualisation_and_cli():
         assert payload["nutrients"]["fat_100g"]["value"] == pytest.approx(25.0)
 
 
+def test_cli_annotate_rejects_several_inputs(tmp_path):
+    a, b = tmp_path / "a.png", tmp_path / "b.png"
+    for path in (a, b):
+        path.write_bytes(b"x")
+    assert cli_main(["read", str(a), str(b), "--annotate", str(tmp_path / "o.png")]) == 2
+
+
 def test_cli_lists_engines():
     buf = io.StringIO()
     with redirect_stdout(buf):
