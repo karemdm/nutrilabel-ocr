@@ -19,8 +19,16 @@ class NutritionReader:
     Parameters
     ----------
     engine:
-        Engine name (``"auto"``, ``"paddleocr"``, ``"rapidocr"``, ``"doctr"``,
-        ``"easyocr"``, ``"tesseract"``) or an :class:`OCREngine` instance.
+        Engine name (``"auto"``, any name listed by ``nutrilabel engines``, for example
+        ``"rapidocr"``, ``"tesseract"``, ``"olmocr"`` or ``"vlm"``) or an
+        :class:`OCREngine` instance.
+    languages:
+        Language codes passed to the engine (default: ``en, fr, de, es, it, nl, pt``).
+        Ignored when ``engine`` is an instance.
+    extractor:
+        A custom :class:`NutritionExtractor`; defaults to one with its default settings.
+    min_fields:
+        Minimum number of nutrients below which the rotation retry is tried.
     max_side:
         Longest image side fed to the OCR engine, in pixels.
     auto_rotate:
@@ -56,6 +64,7 @@ class NutritionReader:
         return _rescale(self.engine.read(array), scale)
 
     def read(self, image: ImageInput) -> ExtractionResult:
+        """OCR the image and extract nutrients; boxes are in original-image pixels."""
         array, scale = prepare(image, max_side=self.max_side)
         ocr = self.engine.read(array)
         result = self.extractor.extract(ocr)

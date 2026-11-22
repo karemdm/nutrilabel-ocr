@@ -34,6 +34,7 @@ class OCREngine(ABC):
 
     @classmethod
     def is_available(cls) -> bool:
+        """True when the engine's library (and binary, if any) can be imported."""
         try:
             cls._check_import()
         except Exception:  # noqa: BLE001 - any import failure means "not available"
@@ -50,6 +51,7 @@ class OCREngine(ABC):
         """Run OCR on an RGB ``uint8`` image of shape ``(H, W, 3)``."""
 
     def read(self, image: np.ndarray) -> OCRResult:
+        """Run the engine on an RGB (or grayscale) array; empty words are dropped."""
         if image.ndim == 2:
             image = np.stack([image] * 3, axis=-1)
         start = time.perf_counter()

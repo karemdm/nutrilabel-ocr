@@ -23,7 +23,7 @@ VLM_PROMPT = (
 
 
 class PaddleOCRVLEngine(OCREngine):
-    """PaddleOCR-VL (document-parsing VLM, ``paddleocr>=3.2``). Experimental; a GPU is
+    """PaddleOCR-VL (document-parsing VLM, ``paddleocr[doc-parser]>=3.3``). Experimental; a GPU is
     strongly recommended."""
 
     name: ClassVar[str] = "paddleocr-vl"

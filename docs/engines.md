@@ -45,7 +45,7 @@ VLM engines receive the image and a prompt (`VLM_PROMPT`: transcribe the nutriti
 
 | Name | pip extra | Model | Licence as stated in code | Hardware note |
 |---|---|---|---|---|
-| `paddleocr-vl` | `paddle-vl` (install separately, not part of `all`) | PaddleOCR-VL via `paddleocr[doc-parser]>=3.2` | not stated; check the model card | "Experimental; a GPU is strongly recommended" |
+| `paddleocr-vl` | `paddle-vl` (install separately, not part of `all`) | PaddleOCR-VL via `paddleocr[doc-parser]>=3.3` | not stated; check the model card | "Experimental; a GPU is strongly recommended" |
 | `olmocr` | `vlm` | `allenai/olmOCR-2-7B-1025` | Apache-2.0 (Qwen2.5-VL fine-tune) | 7B model; GPU recommended |
 | `glm-ocr` | `vlm` | `zai-org/GLM-OCR` | not stated; check the model card | Needs a recent `transformers` release |
 | `chandra` | `vlm` | `datalab-to/chandra-ocr-2` | OpenRAIL (code comment: "non-commercial use is fine") | GPU recommended |
