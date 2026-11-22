@@ -117,33 +117,12 @@ OCR output is cached per engine and image under `benchmark/results/ocr/<engine>/
 
 ## Current results
 
-Source: `benchmark/results/summary.json`, `test` split.
+Source: `benchmark/results/summary.json`, `test` split. The full table (every engine that has been run, with the latency column) is generated into [benchmark_results.md](benchmark_results.md) by `python -m benchmark.report`, and the per-nutrient chart is `assets/per_nutrient_f1.png`; this page does not repeat the numbers so they cannot drift apart.
 
-| Engine | F1 | Precision | Recall | Perfect labels | OCR value recall | OCR s/img (median) |
-|---|---:|---:|---:|---:|---:|---:|
-| Google Cloud Vision (reference) | **0.8344** | 0.8875 | 0.7874 | 41.92 % | 97.96 % | - |
+Engines without a row there have not been run yet: run `python -m benchmark.run --engines <name>` with the engine installed, then `python -m benchmark.report`. The reference row measures the extractor with the dataset's own OCR tokens (see above), so do not read it as the accuracy of any OCR engine.
 
-Raw counts for this row: 198 documents, TP 1696, FP 215, FN 458, 0 errors.
-
-The `summary.json` records 198 documents for the `test` split while the dataset lists 199 test images; this page reports the file as written.
-
-The reference row measures the extractor with the dataset's own OCR tokens (see above). **Rows for the open-source engines are not included here.** They are produced by running the benchmark locally with the engines installed (`python -m benchmark.run`, then `python -m benchmark.report`): the sandbox where this repository was prepared had no internet access, so the images could not be downloaded and no engine was run. Do not infer engine accuracy from the reference row.
-
-Per-nutrient F1 for the reference run (from `per_nutrient_f1` in `summary.json`):
-
-| Nutrient | F1 |
-|---|---:|
-| carbohydrates | 0.8397 |
-| energy_kcal | 0.8348 |
-| energy_kj | 0.8739 |
-| fat | 0.8319 |
-| fiber | 0.8417 |
-| proteins | 0.8050 |
-| salt | 0.8426 |
-| saturated_fat | 0.8126 |
-| sodium | 0.7500 |
-| sugars | 0.8386 |
+`summary.json` records 198 documents for the reference run and 199 for the engine runs, while the dataset lists 199 test images; the files are reported as written.
 
 ![F1 per nutrient](assets/per_nutrient_f1.png)
 
-Results are a measurement on a small test split (about 200 images, 2,154 gold fields in the reference run) and carry sampling uncertainty; small differences between engines may not be meaningful.
+Results are a measurement on a small test split (about 200 images) and carry sampling uncertainty; small differences between engines may not be meaningful.
