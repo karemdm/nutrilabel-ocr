@@ -88,6 +88,7 @@ cd nutrilabel-ocr
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[rapidocr]"          # light, fast, CPU-only: a good first engine
+nutrilabel read samples/7613379505774.jpg --engine rapidocr   # try it on a bundled photo
 ```
 
 Windows (PowerShell):
@@ -416,6 +417,7 @@ nutrilabel-ocr/
 │   ├── cli.py            # `nutrilabel` command
 │   └── types.py          # BBox, Word, OCRResult, NutrientValue, ExtractionResult
 ├── benchmark/            # run.py, report.py, data.py, results/summary.json (raw per-image outputs are git-ignored)
+├── samples/              # 6 example product photos (sources in samples/README.md)
 ├── tests/                # pytest suite + 40 annotated real labels (fixtures)
 ├── scripts/              # make_demo.py (GIF), make_ui_snapshot.py (screenshot), run_all.bat / publish.bat (Windows)
 ├── docs/                 # architecture, engines, benchmark, benchmark_results, assets
@@ -452,4 +454,4 @@ welcome, see [CONTRIBUTING.md](CONTRIBUTING.md).
 - Code: [MIT](LICENSE).
 - Benchmark data and the test fixtures in `tests/fixtures/`: [Open Food Facts](https://world.openfoodfacts.org/) contributors, [CC-BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) ([dataset card](https://huggingface.co/datasets/openfoodfacts/nutrient-detection-layout)).
 - OCR engines and models belong to their authors and keep their own licences (table above); some model weights restrict commercial use. This repository is a non-commercial research / portfolio project.
-- Built with the help of an AI assistant (Claude). All code is covered by the test-suite; please report any issue.
+- All code is covered by the test-suite; please report any issue.
