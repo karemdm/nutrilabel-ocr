@@ -151,35 +151,35 @@ def as_package_photo(label: SyntheticLabel, lang: str = "en", seed: int = 0,
 
     rnd = random.Random(seed)
     tab = label.image
-    W, H = tab.width + 260, tab.height + 520
-    pack = Image.new("RGB", (W, H), color)
+    width, height = tab.width + 260, tab.height + 520
+    pack = Image.new("RGB", (width, height), color)
     d = ImageDraw.Draw(pack)
     # white print area with ingredients, the table and a barcode
-    d.rounded_rectangle([60, 60, W - 60, H - 60], radius=28, fill=(250, 248, 242))
+    d.rounded_rectangle([60, 60, width - 60, height - 60], radius=28, fill=(250, 248, 242))
     big = _font(64, bold=True)
     d.text((100, 90), brand, font=big, fill=color)
     small = _font(22)
     words, line, y = _INGREDIENTS[lang].split(), "", 185
     for w in words:
-        if d.textlength(line + " " + w, font=small) > W - 220:
+        if d.textlength(line + " " + w, font=small) > width - 220:
             d.text((100, y), line.strip(), font=small, fill=(60, 60, 60))
             line, y = "", y + 30
         line += " " + w
     d.text((100, y), line.strip(), font=small, fill=(60, 60, 60))
     pack.paste(tab, (130, y + 60))
-    bx, by = W - 380, H - 150
+    bx, by = width - 380, height - 150
     for i in range(70):
         if rnd.random() < 0.55:
             d.rectangle([bx + i * 4, by, bx + i * 4 + rnd.choice((1, 2, 3)), by + 70], fill=(20, 20, 20))
     d.text((bx, by + 74), "5 012345 678900", font=_font(18), fill=(20, 20, 20))
 
     # perspective: the photo is taken slightly from the side
-    dx, dy = rnd.uniform(0.03, 0.06) * W, rnd.uniform(0.02, 0.05) * H
-    canvas = Image.new("RGB", (int(W * 1.12), int(H * 1.12)), (92, 84, 74))
-    ox, oy = int(W * 0.06), int(H * 0.06)
+    dx, dy = rnd.uniform(0.03, 0.06) * width, rnd.uniform(0.02, 0.05) * height
+    canvas = Image.new("RGB", (int(width * 1.12), int(height * 1.12)), (92, 84, 74))
+    ox, oy = int(width * 0.06), int(height * 0.06)
     canvas.paste(pack, (ox, oy))
-    src = [(ox, oy), (ox + W, oy), (ox + W, oy + H), (ox, oy + H)]
-    dst = [(ox + dx, oy), (ox + W - dx * 0.3, oy + dy), (ox + W, oy + H - dy), (ox, oy + H)]
+    src = [(ox, oy), (ox + width, oy), (ox + width, oy + height), (ox, oy + height)]
+    dst = [(ox + dx, oy), (ox + width - dx * 0.3, oy + dy), (ox + width, oy + height - dy), (ox, oy + height)]
     coeffs = _perspective_coeffs(dst, src)
     canvas = canvas.transform(canvas.size, Image.PERSPECTIVE, coeffs, Image.BICUBIC,
                               fillcolor=(92, 84, 74))
