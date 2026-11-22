@@ -180,12 +180,16 @@ label.jpg  (engine: rapidocr, OCR 0.41s)
 | Option | Meaning |
 |---|---|
 | `-e, --engine` | Engine name or `auto` (best installed classic engine) |
-| `--lang en,fr,de` | Languages passed to engines that need them (Tesseract, EasyOCR) |
+| `--lang en,fr,de` | Languages passed to engines that need them (Tesseract, EasyOCR); default `en,fr,de,es,it,nl,pt` |
 | `--json` / `--with-ocr` | JSON output / include raw OCR words |
 | `--csv FILE` | One row per image with every supported field |
-| `--out-dir DIR` / `--annotate PNG` | Save annotated images |
+| `--out-dir DIR` / `--annotate PNG` | Save annotated images (`--annotate` takes a single input, `--out-dir` writes `<name>.annotated.png` per image) |
+| `-q, --quiet` | Do not print the per-image table |
+| `--version` | Print the version and exit (a global option: `nutrilabel --version`) |
 | `--max-side N` | Longest image side sent to the OCR (default 1600 px) |
 | `--no-rotate` | Disable the retry with the photo rotated by 90/270/180 degrees |
+
+Exit status: `0` when every image gave at least one value, `1` when an image failed or had no values, `2` when no image was found or the options are invalid.
 
 ### Web interface
 
@@ -193,6 +197,8 @@ label.jpg  (engine: rapidocr, OCR 0.41s)
 nutrilabel ui                          # opens http://127.0.0.1:8765 in your browser
 nutrilabel ui --engine paddleocr --port 9000 --no-browser
 ```
+
+Options: `-e/--engine` (preselected engine), `--host` (default `127.0.0.1`), `--port` (default `8765`), `--no-browser`.
 
 - **Open image(s)**: one or several files. **Open folder**: every image in a folder (and sub-folders). Drag and drop also works.
 - Click an image in the list to see it: **Side by side** (original + extraction), **Original** or **Extraction** only, plus the extracted table and warnings.
@@ -385,7 +391,7 @@ Method details and caveats: [docs/benchmark.md](docs/benchmark.md).
 
 Supported fields: `energy_kj`, `energy_kcal`, `fat`, `saturated_fat`, `carbohydrates`,
 `sugars`, `fiber`, `proteins`, `salt`, `sodium`, each with the suffix `_100g` or `_serving`.
-`bbox` is in original-image pixels (`null`-like synthetic grid for text-only VLM engines).
+`bbox` is in original-image pixels; text-only VLM engines have no real positions (their boxes lie on a synthetic grid).
 
 ## Project structure
 
@@ -395,7 +401,7 @@ nutrilabel-ocr/
 │   ├── engines/          # OCR engine registry and adapters
 │   │   ├── base.py       #   OCREngine interface
 │   │   ├── classic.py    #   PaddleOCR, RapidOCR, Surya, docTR, EasyOCR, Tesseract
-│   │   └── vlm.py        #   PaddleOCR-VL, olmOCR, GLM-OCR, Chandra, ... and local servers
+│   │   └── vlm.py        #   PaddleOCR-VL, olmOCR, GLM-OCR, Chandra, ... and local servers (also the generic `hf-vlm` class)
 │   ├── extraction/       # words -> nutrients
 │   │   ├── extractor.py  #   layout-aware matching (rows, columns, orientation)
 │   │   ├── layout.py     #   word splitting and line grouping
@@ -409,10 +415,10 @@ nutrilabel-ocr/
 │   ├── pipeline.py       # NutritionReader: image -> ExtractionResult
 │   ├── cli.py            # `nutrilabel` command
 │   └── types.py          # BBox, Word, OCRResult, NutrientValue, ExtractionResult
-├── benchmark/            # run.py, report.py, data.py, results/summary.json
+├── benchmark/            # run.py, report.py, data.py, results/summary.json (raw per-image outputs are git-ignored)
 ├── tests/                # pytest suite + 40 annotated real labels (fixtures)
-├── scripts/              # make_demo.py (GIF), make_ui_snapshot.py (screenshot)
-├── docs/                 # architecture, engines, benchmark, assets
+├── scripts/              # make_demo.py (GIF), make_ui_snapshot.py (screenshot), run_all.bat / publish.bat (Windows)
+├── docs/                 # architecture, engines, benchmark, benchmark_results, assets
 ├── main_cli.py           # run the CLI without installing
 ├── main_ui.py            # run the web interface without installing
 ├── Dockerfile, Makefile, pyproject.toml
