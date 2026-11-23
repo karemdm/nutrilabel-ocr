@@ -156,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
     p_read.add_argument("images", nargs="+", help="image files and/or folders (recursive)")
     p_read.add_argument("-e", "--engine", default="auto",
                         help="auto | paddleocr | rapidocr | surya | doctr | easyocr | tesseract | "
-                             "paddleocr-vl | olmocr | glm-ocr | chandra | nanonets-ocr | "
+                             "ultralytics[:n|s|m|l|x] | paddleocr-vl | olmocr | glm-ocr | chandra | nanonets-ocr | "
                              "deepseek-ocr | qwen-vl | vlm  (see `nutrilabel engines`)")
     p_read.add_argument("--lang", default=None,
                         help="comma separated languages for engines that need them, e.g. en,fr,de "

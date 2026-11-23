@@ -23,6 +23,7 @@ ENGINE_LABELS = {
     "doctr": "docTR",
     "easyocr": "EasyOCR",
     "tesseract": "Tesseract 5",
+    "ultralytics": "Ultralytics OCR (YOLO26 + PP-OCRv6)",
     "surya": "Surya",
     "paddleocr-vl": "PaddleOCR-VL (VLM)",
     "olmocr": "olmOCR-2 7B (VLM)",
