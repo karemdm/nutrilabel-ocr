@@ -3,7 +3,7 @@
 Exit status of ``read``: 0 when every image gave at least one value, 1 when an image failed
 or had no values, 2 when no image was found or the options are invalid.
 
-    nutrilabel read label.jpg                       # best installed engine
+    nutrilabel read label.jpg                       # first installed classic engine
     nutrilabel read label.jpg --engine tesseract --json
     nutrilabel read label.jpg --annotate out.png    # save a visual check
     nutrilabel read photos/ --csv results.csv --out-dir annotated/   # a whole folder
