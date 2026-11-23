@@ -57,7 +57,7 @@ VLM engines receive the image and a prompt (`VLM_PROMPT`: transcribe the nutriti
 
 The `vlm` extra installs `transformers>=4.57`, `torch>=2.3`, `accelerate>=0.30` and `torchvision`. The first call of a transformers-based engine downloads the weights (several GB).
 
-`hf-vlm` and the six presets (`olmocr`, `glm-ocr`, `chandra`, `nanonets-ocr`, `deepseek-ocr`, `qwen-vl`) share the `HFVLMEngine` class. Presets only set `model_id` and `trust_remote_code`.
+`hf-vlm` and the six presets (`olmocr`, `glm-ocr`, `chandra`, `nanonets-ocr`, `deepseek-ocr`, `qwen-vl`) share the `HFVLMEngine` class. The presets only set `model_id` and `trust_remote_code`, except `deepseek-ocr`, which has its own subclass (`DeepSeekOCREngine`): it loads the model with `AutoModel` and calls its `infer` method, and it counts as available only when CUDA is present.
 
 `HFVLMEngine` options: `model_id` (overrides the checkpoint, for example `HFVLMEngine(model_id="org/model")`), `prompt=VLM_PROMPT`, `max_new_tokens=1024`, `max_side=1280` (longest side of the image sent to the model), `device_map="auto"`, `torch_dtype="auto"`. Generation is greedy (`do_sample=False`).
 
