@@ -26,7 +26,7 @@ The high-level entry point is `NutritionReader` (`pipeline.py`); the extraction 
 
 `imaging.preprocess.prepare` loads the image (path, bytes, PIL image or array), applies EXIF orientation, converts to RGB and rescales: photos whose longest side exceeds `max_side` (default 1600 in `NutritionReader`) are shrunk, and images whose shortest side is under 400 px are enlarged 2x. The scale factor is kept so that boxes are mapped back to original-image coordinates.
 
-The engine (see [engines.md](engines.md)) returns `Word(text, bbox, confidence)` objects. Engines differ in granularity: Tesseract and docTR return words, others return whole text lines. The extractor does not care, because the next step normalises both.
+The engine (see [engines.md](engines.md)) returns `Word(text, bbox, confidence)` objects. Engines differ in granularity: Tesseract, docTR and Ultralytics return words, others return whole text lines. The extractor does not care, because the next step normalises both.
 
 If fewer than `min_fields` (default 2) nutrients are found, `NutritionReader.read` re-runs OCR on the image rotated by 90, 270 and 180 degrees and keeps the best reading.
 

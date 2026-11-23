@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `ultralytics` engine: the Ultralytics OCR solution (YOLO26 text detector + PP-OCRv6 recogniser), with detector size selectable as `ultralytics:n|s|m|l|x`, a new `ultralytics` extra and tests. Benchmark on the full test split (199 photos), `ultralytics:s`: F1 0.742, precision 0.774, recall 0.712, median OCR time 119.0 s per image (RapidOCR: F1 0.730, precision 0.856, recall 0.636, 5.7 s). On the 10 worst images, `ultralytics:x` raised the mean F1 from 0.041 to 0.104. `engine="auto"` keeps RapidOCR ahead of it: `ultralytics` is optional, AGPL-3.0 and much slower.
+
 ## [0.1.0] - 2026-11-11
 
 ### Added

@@ -420,3 +420,80 @@ def surya_to_words(preds: list[Any]) -> list[Word]:
                 continue
             words.append(Word(str(text), box, float(getattr(line, "confidence", 1.0) or 1.0)))
     return words
+
+
+# ---------------------------------------------------------------------------- Ultralytics
+
+#: Sizes of the ``yolo26{size}-text.pt`` detector weights (nano ... extra large).
+ULTRALYTICS_SIZES: tuple[str, ...] = ("n", "s", "m", "l", "x")
+
+
+class UltralyticsEngine(OCREngine):
+    """Ultralytics OCR solution: YOLO26 oriented-box text detector + PP-OCRv6 recogniser.
+
+    Detection and reading run through ``ultralytics.solutions.OCR`` (ONNX Runtime for
+    the recogniser), which returns one word per detected box in reading order. Needs
+    ``ultralytics`` >= 8.4.215 and Python >= 3.11. Code and weights are AGPL-3.0.
+
+    ``size`` picks the detector (``"n"``, ``"s"``, ``"m"``, ``"l"`` or ``"x"``);
+    ``model`` overrides it with any weights name or path; ``recognizer`` is a PaddleOCR
+    model name (default: the library's PP-OCRv6 medium recogniser). Weights download on
+    first use.
+    """
+
+    name: ClassVar[str] = "ultralytics"
+    pip_extra: ClassVar[str] = "ultralytics"
+
+    def __init__(self, languages=None, size: str = "x", model: str | None = None,
+                 imgsz: int = 1280, recognizer: str | None = None, device: str | None = None,
+                 **solution_kwargs: Any) -> None:
+        super().__init__(languages)
+        size = str(size).lower().strip()
+        if model is None and size not in ULTRALYTICS_SIZES:
+            raise ValueError(f"Unknown size {size!r}. Choose from: {', '.join(ULTRALYTICS_SIZES)}")
+        self.size = size
+        self.model = model or f"yolo26{size}-text.pt"
+        self.imgsz = imgsz
+        self.recognizer = recognizer
+        self.device = device
+        self.solution_kwargs = solution_kwargs
+        self._ocr = None
+
+    @classmethod
+    def _check_import(cls) -> None:
+        import onnxruntime  # noqa: F401
+        from ultralytics.solutions import OCR  # noqa: F401
+
+    def _load(self) -> None:
+        from ultralytics.solutions import OCR
+
+        kwargs: dict[str, Any] = {"model": self.model, "imgsz": self.imgsz,
+                                  "show": False, "verbose": False}
+        if self.recognizer:
+            kwargs["recognizer"] = self.recognizer
+        if self.device:
+            kwargs["device"] = self.device
+        kwargs.update(self.solution_kwargs)
+        self._ocr = OCR(**kwargs)
+
+    def _run(self, image: np.ndarray) -> list[Word]:
+        if self._ocr is None:
+            self._load()
+        bgr = image[:, :, ::-1].copy()  # Ultralytics follows the OpenCV (BGR) convention
+        return ultralytics_to_words(self._ocr(bgr).texts)
+
+
+def ultralytics_to_words(texts: list[dict[str, Any]] | None) -> list[Word]:
+    """Convert ``OCR(...)(image).texts`` (dicts with ``text``, ``confidence``, ``line``, ``polygon``) to words.
+
+    The solution already returns words in reading order; a stable sort on ``line`` keeps
+    that order if the list ever arrives shuffled. Entries without text or polygon are skipped.
+    """
+    words: list[Word] = []
+    for item in sorted(texts or [], key=lambda t: t.get("line", 0)):
+        text, polygon = item.get("text"), item.get("polygon")
+        if not text or polygon is None or len(polygon) == 0:
+            continue
+        words.append(Word(str(text), BBox.from_points(np.asarray(polygon).reshape(-1, 2)),
+                          float(item.get("confidence", 1.0))))
+    return words

@@ -23,6 +23,7 @@ Classic engines return word or line boxes in image coordinates. They are the onl
 | `easyocr` | `easyocr` | EasyOCR: CRAFT detector + CRNN recogniser; all Latin languages share one model | not stated; check the project | `gpu=False` by default |
 | `tesseract` | `tesseract` | Tesseract 4/5 (LSTM) via `pytesseract` | not stated; check the project | Needs the Tesseract binary on `PATH` (availability check calls `get_tesseract_version()`); CPU |
 | `surya` | `surya` | Surya OCR (Datalab): transformer detector + recogniser, 90+ languages, line boxes; `surya-ocr` >= 0.14 predictor API and the older `run_ocr` API | Code GPL-3.0, weights under a modified OpenRAIL licence (free for research and personal use) | Not stated in code |
+| `ultralytics` | `ultralytics` | Ultralytics OCR solution: YOLO26 oriented-box text detector (`yolo26{n,s,m,l,x}-text.pt`) + PP-OCRv6 recogniser (`PP-OCRv6_medium_rec.onnx`, ONNX Runtime); word-level boxes | AGPL-3.0 (Ultralytics code and weights) | Needs `ultralytics>=8.4.215`, `onnxruntime` and Python >= 3.11; CPU or GPU (`device=`); weights download on first use |
 
 Constructor options (all engines also accept `languages`, default `("en", "fr", "de", "es", "it", "nl", "pt")`; adapters keep only what the library supports):
 
@@ -34,6 +35,22 @@ Constructor options (all engines also accept `languages`, default `("en", "fr", 
 | `easyocr` | `gpu=False` |
 | `tesseract` | `psm=11`, `oem=1` |
 | `surya` | none beyond `languages` |
+| `ultralytics` | `size="x"` (detector `yolo26{size}-text.pt`, one of `n`, `s`, `m`, `l`, `x`), `model=None` (any weights name or path; overrides `size`), `imgsz=1280`, `recognizer=None` (a PaddleOCR model name; default PP-OCRv6 medium), `device=None`, `**solution_kwargs` forwarded to `ultralytics.solutions.OCR` |
+
+### Ultralytics
+
+The adapter wraps `ultralytics.solutions.OCR`. The YOLO26 detector finds oriented text boxes at any page rotation, each box is cropped upright and read by the PP-OCRv6 recogniser, and the solution returns the words already grouped into lines in reading order. The adapter turns each 4-point polygon into the enclosing `BBox`, keeps the recogniser's confidence and keeps the solution's line order (`ultralytics_to_words`). It passes the image as BGR and sets `show=False` and `verbose=False`.
+
+Weights are downloaded on first use into the current working directory (`yolo26<size>-text.pt` and `PP-OCRv6_medium_rec.onnx`), not into a cache folder. The repository `.gitignore` excludes them at the repo root; if you run from another directory, keep them out of version control there too.
+
+Select a detector size with the name suffix or an option; both forms are equivalent:
+
+```python
+get_engine("ultralytics:n")                 # smallest detector
+get_engine("ultralytics", size="s", imgsz=960)
+```
+
+The package is AGPL-3.0, a strong copyleft licence: check it against how you distribute the code before using this engine in a product. It is not part of the `all` extra, because it needs Python 3.11 or newer.
 
 ### Tesseract page segmentation mode
 
@@ -105,10 +122,10 @@ Product photos are sent to whatever server you configure. The docstring recommen
 `get_engine("auto")` (the default of `NutritionReader`) takes the first installed engine in `PREFERENCE`:
 
 ```python
-PREFERENCE = ["paddleocr", "rapidocr", "surya", "doctr", "easyocr", "tesseract"]
+PREFERENCE = ["paddleocr", "rapidocr", "surya", "doctr", "easyocr", "tesseract", "ultralytics"]
 ```
 
-Only classic engines are in this list. VLM engines are never picked automatically: a first call downloads several GB of weights, and the `vlm` engine would contact a server. If no classic engine is installed, `EngineNotAvailable` is raised with an install hint. The comment in the code says to keep `PREFERENCE` in sync with the latest benchmark; `python -m benchmark.report` prints the recommended order.
+Only classic engines are in this list. VLM engines are never picked automatically: a first call downloads several GB of weights, and the `vlm` engine would contact a server. If no classic engine is installed, `EngineNotAvailable` is raised with an install hint. The order is a deliberate choice, not a copy of the F1 ranking: it favours light, fast, permissively licensed engines. `ultralytics` has the highest F1 in the benchmark (0.742 against 0.730 for `rapidocr` on the test split), but it is an optional extra, AGPL-3.0 and its recorded median OCR time is 119.0 s per image against 5.7 s, so it is last and is used only when requested by name. `paddleocr`, `surya` and `tesseract` have not been benchmarked yet. `python -m benchmark.report` prints the order by F1 for reference.
 
 ### `available_engines`
 
@@ -132,6 +149,8 @@ Names are lower-cased and stripped, then mapped:
 | `tess` | `tesseract` |
 | `paddle-vl`, `paddleocrvl` | `paddleocr-vl` |
 
+The form `ultralytics:<size>` (`n`, `s`, `m`, `l`, `x`) selects the detector size of the `ultralytics` engine.
+
 An unknown name raises `ValueError` listing the valid names; an engine whose library is missing raises `EngineNotAvailable` with a `pip install 'nutrilabel-ocr[<extra>]'` hint.
 
 ## Adding an engine
@@ -152,7 +171,7 @@ No single engine wins on every axis, and the right choice depends on the deploym
 - **Latency.** VLMs generate text token by token; the code notes that 7B models take minutes per image on CPU. Classic engines are designed for CPU use. Measure both with the benchmark.
 - **Install size and dependencies.** RapidOCR runs on ONNX Runtime without a deep-learning framework; PaddleOCR, docTR, EasyOCR and Surya pull in Paddle or PyTorch; VLM engines add multi-GB weights. Tesseract needs a system binary.
 - **GPU.** Classic engines are usable on CPU. VLM engines are impractical without a GPU or a remote server.
-- **Licence.** Surya's code is GPL-3.0 with restricted-use weights, Chandra uses OpenRAIL, olmOCR is Apache-2.0. Check each licence against your use case.
+- **Licence.** Ultralytics is AGPL-3.0, Surya's code is GPL-3.0 with restricted-use weights, Chandra uses OpenRAIL, olmOCR is Apache-2.0. Check each licence against your use case.
 - **Privacy and data flow.** The `vlm` engine sends images to a server you configure.
 
-The benchmark (`python -m benchmark.run`, see [benchmark.md](benchmark.md)) measures F1 and per-image OCR latency for each engine on the same images. Its output decides the order of `PREFERENCE`, which is what `engine="auto"` uses; override it per deployment by passing an engine name.
+The benchmark (`python -m benchmark.run`, see [benchmark.md](benchmark.md)) measures F1 and per-image OCR latency for each engine on the same images. Its output informs the order of `PREFERENCE` (which `engine="auto"` uses) together with speed, install size and licence; override it per deployment by passing an engine name.

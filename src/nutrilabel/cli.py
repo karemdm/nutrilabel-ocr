@@ -3,7 +3,7 @@
 Exit status of ``read``: 0 when every image gave at least one value, 1 when an image failed
 or had no values, 2 when no image was found or the options are invalid.
 
-    nutrilabel read label.jpg                       # best installed engine
+    nutrilabel read label.jpg                       # first installed classic engine
     nutrilabel read label.jpg --engine tesseract --json
     nutrilabel read label.jpg --annotate out.png    # save a visual check
     nutrilabel read photos/ --csv results.csv --out-dir annotated/   # a whole folder
@@ -156,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
     p_read.add_argument("images", nargs="+", help="image files and/or folders (recursive)")
     p_read.add_argument("-e", "--engine", default="auto",
                         help="auto | paddleocr | rapidocr | surya | doctr | easyocr | tesseract | "
-                             "paddleocr-vl | olmocr | glm-ocr | chandra | nanonets-ocr | "
+                             "ultralytics[:n|s|m|l|x] | paddleocr-vl | olmocr | glm-ocr | chandra | nanonets-ocr | "
                              "deepseek-ocr | qwen-vl | vlm  (see `nutrilabel engines`)")
     p_read.add_argument("--lang", default=None,
                         help="comma separated languages for engines that need them, e.g. en,fr,de "
@@ -174,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p_ui = sub.add_parser("ui", help="open the local web interface (single image or folder)")
     p_ui.add_argument("-e", "--engine", default="auto",
-                      help="engine preselected in the page (default: auto, best installed classic engine)")
+                      help="engine preselected in the page (default: auto, first installed classic engine in the preference list)")
     p_ui.add_argument("--host", default="127.0.0.1",
                       help="address to bind (default: 127.0.0.1; use 0.0.0.0 only in a container)")
     p_ui.add_argument("--port", type=int, default=8765, help="port (default: 8765)")

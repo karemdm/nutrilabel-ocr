@@ -32,6 +32,12 @@ flagged/
 benchmark/results/ocr/
 benchmark/results/*/predictions.jsonl
 
+# Model weights downloaded into the working directory by the ultralytics engine
+/yolo26*-text.pt
+/PP-OCR*.onnx
+/*.onnx
+/*.pt
+
 # Editors / OS
 .idea/
 .vscode/

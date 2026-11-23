@@ -2,12 +2,15 @@
 
     python -m benchmark.report                   # markdown table + charts
     python -m benchmark.report --gallery 6       # + annotated real examples and a GIF
+    python -m benchmark.report --gallery 6 --gallery-engine ultralytics:s \
+        --gallery-gif real_examples_ultralytics.gif --gallery-skip 12,22,38
+                                                 # same, from the cached ultralytics:s OCR
 
 Outputs go to ``docs/`` so the README can embed them:
 
 * ``docs/benchmark_results.md`` - results table (paste-ready for the README)
 * ``docs/assets/f1_vs_latency.png`` / ``docs/assets/per_nutrient_f1.png``
-* ``docs/assets/examples/*.jpg`` and ``docs/assets/real_examples.gif`` (``--gallery``)
+* ``docs/assets/examples/*.jpg`` and ``docs/assets/real_examples.gif`` (``--gallery``; ``--gallery-gif`` sets the GIF name)
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ ENGINE_LABELS = {
     "doctr": "docTR",
     "easyocr": "EasyOCR",
     "tesseract": "Tesseract 5",
+    "ultralytics": "Ultralytics OCR (YOLO26 text detector + PP-OCRv6 recognizer)",
     "surya": "Surya",
     "paddleocr-vl": "PaddleOCR-VL (VLM)",
     "olmocr": "olmOCR-2 7B (VLM)",
@@ -35,6 +39,18 @@ ENGINE_LABELS = {
 }
 
 
+def _label(engine: str, short: bool = False) -> str:
+    """Display name; ``ultralytics:s`` adds the detector size to the base label."""
+    base, _, size = engine.partition(":")
+    if short and base == "ultralytics":
+        return f"Ultralytics OCR ({engine})"
+    if engine in ENGINE_LABELS:
+        return ENGINE_LABELS[engine]
+    if base == "ultralytics" and size:
+        return f"Ultralytics OCR (YOLO26-{size} text detector + PP-OCRv6 recognizer), `{engine}`"
+    return ENGINE_LABELS.get(base, engine)
+
+
 def _table(summaries: dict) -> str:
     rows = sorted(summaries.values(), key=lambda s: s["f1"], reverse=True)
     lines = [
@@ -44,14 +60,16 @@ def _table(summaries: dict) -> str:
     for s in rows:
         lat = s.get("ocr_latency_median_s")
         lines.append(
-            f"| {ENGINE_LABELS.get(s['engine'], s['engine'])} | **{s['f1']:.3f}** | "
+            f"| {_label(s['engine'])} | **{s['f1']:.3f}** | "
             f"{s['precision']:.3f} | {s['recall']:.3f} | {s['perfect_document_rate']:.1%} | "
             f"{s['ocr_value_recall']:.1%} | {lat if lat is not None else '-'} |"
         )
-    n = rows[0]["documents"] if rows else 0
+    counts = sorted({r["documents"] for r in rows})
+    n = f"{counts[-1]} images ({counts[0]} in the row with fewer)" if len(counts) > 1 else (
+        f"{counts[0]} images" if counts else "0 images")
     split = rows[0].get("split", "test") if rows else "test"
     lines.append("")
-    lines.append(f"*{n} images, `{split}` split. \\*The reference row uses the dataset's own "
+    lines.append(f"*{n}, `{split}` split. \\*The reference row uses the dataset's own "
                  "Google Cloud Vision tokens, so it measures the extractor with near-perfect OCR.*")
     return "\n".join(lines)
 
@@ -69,7 +87,7 @@ def _charts(summaries: dict, assets: Path) -> list[Path]:
         fig, ax = plt.subplots(figsize=(6.4, 4.0), dpi=150)
         for s in engines:
             ax.scatter(s["ocr_latency_median_s"], s["f1"], s=80)
-            ax.annotate(ENGINE_LABELS.get(s["engine"], s["engine"]),
+            ax.annotate(_label(s["engine"], short=True),
                         (s["ocr_latency_median_s"], s["f1"]), textcoords="offset points",
                         xytext=(6, 4), fontsize=9)
         ref = summaries.get("gcv")
@@ -94,7 +112,7 @@ def _charts(summaries: dict, assets: Path) -> list[Path]:
         fig, ax = plt.subplots(figsize=(8, 0.55 * len(order) + 1.6), dpi=150)
         im = ax.imshow(data, vmin=0, vmax=1, cmap="viridis", aspect="auto")
         ax.set_xticks(range(len(names)), names, rotation=35, ha="right")
-        ax.set_yticks(range(len(order)), [ENGINE_LABELS.get(e, e) for e in order])
+        ax.set_yticks(range(len(order)), [_label(e, short=True) for e in order])
         for i, row in enumerate(data):
             for j, v in enumerate(row):
                 ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=7,
@@ -109,7 +127,8 @@ def _charts(summaries: dict, assets: Path) -> list[Path]:
     return made
 
 
-def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> None:
+def _gallery(engine: str, results: Path, assets: Path, n: int, split: str,
+             gif_name: str = "real_examples.gif", skip: frozenset[int] = frozenset()) -> None:
     from PIL import Image
 
     from nutrilabel.extraction.extractor import NutritionExtractor
@@ -120,7 +139,7 @@ def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> No
 
     out_dir = assets / "examples"
     out_dir.mkdir(parents=True, exist_ok=True)
-    preds = [json.loads(line) for line in (results / engine / "predictions.jsonl").open()]
+    preds = [json.loads(line) for line in (results / engine.replace(":", "-") / "predictions.jsonl").open()]
     good = {p["idx"] for p in preds if p.get("tp") and len(p["tp"]) >= 6 and not p.get("fp")}
     if engine in SYNTHETIC_BOX_ENGINES:
         print(f"{engine} returns text only (no boxes): gallery skipped")
@@ -128,15 +147,16 @@ def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> No
     frames = []
     extractor = NutritionExtractor()
     for s in iter_hf(split):
-        if s.idx not in good:
+        if s.idx not in good or s.idx in skip:
             continue
-        cache = results / "ocr" / engine / f"{s.idx:05d}.json"
+        # cache only: a missing entry is skipped, OCR never runs here
+        cache = results / "ocr" / engine.replace(":", "-") / f"{s.idx:05d}.json"
         if not cache.exists():
             continue
         ocr = OCRResult.from_dict(json.loads(cache.read_text(encoding="utf-8")))
         img = draw_result(s.image, extractor.extract(ocr))
         img.thumbnail((1400, 900))
-        path = out_dir / f"{engine}_{s.idx:03d}_{s.meta.get('barcode', '')}.jpg"
+        path = out_dir / f"{engine.replace(':', '-')}_{s.idx:03d}_{s.meta.get('barcode', '')}.jpg"
         img.save(path, quality=88)
         frames.append(img)
         if len(frames) >= n:
@@ -147,9 +167,9 @@ def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> No
         canvas = [Image.new("RGB", (w, h), "white") for _ in frames]
         for c, f in zip(canvas, frames):
             c.paste(f, (0, 0))
-        canvas[0].save(assets / "real_examples.gif", save_all=True, append_images=canvas[1:],
+        canvas[0].save(assets / gif_name, save_all=True, append_images=canvas[1:],
                        duration=2200, loop=0, optimize=True)
-        print(f"gallery: {len(frames)} images in {out_dir}, GIF in {assets / 'real_examples.gif'}")
+        print(f"gallery: {len(frames)} images in {out_dir}, GIF in {assets / gif_name}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -158,6 +178,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--docs", default="docs")
     p.add_argument("--gallery", type=int, default=0, help="number of annotated real examples")
     p.add_argument("--gallery-engine", default=None, help="defaults to the best open-source engine")
+    p.add_argument("--gallery-gif", default="real_examples.gif",
+                   help="file name of the gallery GIF under docs/assets (default: real_examples.gif)")
+    p.add_argument("--gallery-skip", default="",
+                   help="comma-separated sample idx to leave out of the gallery (e.g. blurry or tiny text)")
     args = p.parse_args(argv)
 
     results = Path(args.results)
@@ -177,7 +201,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.gallery and ranking:
         engine = args.gallery_engine or ranking[0]
         split = summaries[engine].get("split", "test")
-        _gallery(engine, results, docs / "assets", args.gallery, split)
+        _gallery(engine, results, docs / "assets", args.gallery, split, args.gallery_gif,
+                 frozenset(int(i) for i in args.gallery_skip.split(",") if i.strip()))
     return 0
 
 

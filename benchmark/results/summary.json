@@ -114,5 +114,34 @@
     "ocr_latency_median_s": 8.644,
     "ocr_latency_p90_s": 17.864,
     "split": "test"
+  },
+  "ultralytics:s": {
+    "documents": 199,
+    "precision": 0.7742,
+    "recall": 0.7118,
+    "f1": 0.7417,
+    "tp": 1546,
+    "fp": 451,
+    "fn": 626,
+    "perfect_document_rate": 0.201,
+    "ocr_value_recall": 0.9581,
+    "per_nutrient_f1": {
+      "carbohydrates": 0.7536,
+      "energy_kcal": 0.7856,
+      "energy_kj": 0.8685,
+      "fat": 0.7078,
+      "fiber": 0.7552,
+      "proteins": 0.7192,
+      "salt": 0.6823,
+      "saturated_fat": 0.7027,
+      "sodium": 0.6061,
+      "sugars": 0.7155
+    },
+    "engine": "ultralytics:s",
+    "errors": 0,
+    "wall_time_s": 21324.7,
+    "ocr_latency_median_s": 119.009,
+    "ocr_latency_p90_s": 251.975,
+    "split": "test"
   }
 }

@@ -42,8 +42,13 @@ from .data import Sample, iter_hf, iter_jsonl
 REFERENCE = "gcv"  # the dataset's own Google Cloud Vision tokens
 
 
+def _folder(engine_name: str) -> str:
+    """Folder name for an engine; variants such as "ultralytics:s" use "-" because ":" is invalid on Windows."""
+    return engine_name.replace(":", "-")
+
+
 def _ocr_cached(engine_name: str, engine, sample: Sample, cache_dir: Path, max_side: int) -> OCRResult:
-    path = cache_dir / engine_name / f"{sample.idx:05d}.json"
+    path = cache_dir / _folder(engine_name) / f"{sample.idx:05d}.json"
     if path.exists():
         return OCRResult.from_dict(json.loads(path.read_text(encoding="utf-8")))
     array, scale = prepare(sample.image, max_side=max_side)
@@ -69,7 +74,7 @@ def evaluate_engine(name: str, samples: list[Sample], out: Path, max_side: int) 
     report = Report()
     latencies: list[float] = []
     errors = 0
-    pred_path = out / name / "predictions.jsonl"
+    pred_path = out / _folder(name) / "predictions.jsonl"
     pred_path.parent.mkdir(parents=True, exist_ok=True)
     t0 = time.perf_counter()
     with pred_path.open("w", encoding="utf-8") as fh:

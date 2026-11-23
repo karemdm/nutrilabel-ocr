@@ -7,7 +7,7 @@
 [![CI](https://github.com/karemdm/nutrilabel-ocr/actions/workflows/ci.yml/badge.svg)](https://github.com/karemdm/nutrilabel-ocr/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Engines](https://img.shields.io/badge/OCR%20engines-14-orange)
+![Engines](https://img.shields.io/badge/OCR%20engines-15-orange)
 
 <img src="docs/assets/demo.gif" alt="Package photo in, OCR boxes, extracted nutrient table out" width="820">
 
@@ -50,7 +50,7 @@ from [Open Food Facts](https://world.openfoodfacts.org/).
 
 | | |
 |---|---|
-| **14 OCR engines, one parameter** | `engine="paddleocr"`, `"rapidocr"`, `"surya"`, `"doctr"`, `"easyocr"`, `"tesseract"`, `"paddleocr-vl"`, `"olmocr"`, `"glm-ocr"`, `"chandra"`, `"nanonets-ocr"`, `"deepseek-ocr"`, `"qwen-vl"`, or any model behind a local Ollama / vLLM server (`"vlm"`). |
+| **15 OCR engines, one parameter** | `engine="paddleocr"`, `"rapidocr"`, `"surya"`, `"doctr"`, `"easyocr"`, `"tesseract"`, `"ultralytics"`, `"paddleocr-vl"`, `"olmocr"`, `"glm-ocr"`, `"chandra"`, `"nanonets-ocr"`, `"deepseek-ocr"`, `"qwen-vl"`, or any model behind a local Ollama / vLLM server (`"vlm"`). |
 | **Real nutrition-table understanding** | Per-100 g vs per-serving columns, kJ/kcal stacked in one cell, "% reference intake" columns ignored, US *Nutrition Facts* panels, labels printed as a sentence, photos taken sideways, horizontal tables. |
 | **Multilingual** | English, French, German, Spanish, Italian, Dutch, Portuguese (including Brazilian ANVISA tables with *Quantidade por porção* / *%VD*), Croatian, Slovenian, Czech, Polish, Hungarian, Danish, Swedish, Finnish, Romanian. |
 | **Self-checking** | Nutritional sanity rules (saturated fat <= fat, sugars <= carbs, <= 100 g per 100 g, kJ ~ 4.184 x kcal) catch and repair typical OCR slips such as a lost decimal separator. |
@@ -110,6 +110,7 @@ Pick the engines you want; extras can be combined (`pip install -e ".[paddle,tes
 | `surya` | `surya` | Transformer OCR, 90+ languages |
 | `doctr` | `doctr` | docTR (PyTorch) |
 | `easyocr` | `easyocr` | EasyOCR (PyTorch) |
+| `ultralytics` | `ultralytics` | Ultralytics OCR solution (YOLO26 text detector + PP-OCRv6 on ONNX Runtime); Python 3.11+, AGPL-3.0 |
 | `tesseract` | `tesseract` | Also needs the binary: `apt install tesseract-ocr tesseract-ocr-fra ...` / `brew install tesseract` / [Windows installer](https://github.com/UB-Mannheim/tesseract/wiki) |
 | `paddle-vl` | `paddleocr-vl` | PaddleOCR-VL document VLM, GPU recommended |
 | `vlm` | `olmocr`, `glm-ocr`, `chandra`, `nanonets-ocr`, `deepseek-ocr`, `qwen-vl` | Hugging Face `transformers` + PyTorch, GPU strongly recommended (weights: 2-16 GB) |
@@ -180,7 +181,7 @@ label.jpg  (engine: rapidocr, OCR 0.41s)
 
 | Option | Meaning |
 |---|---|
-| `-e, --engine` | Engine name or `auto` (best installed classic engine) |
+| `-e, --engine` | Engine name or `auto` (first installed classic engine in the preference list) |
 | `--lang en,fr,de` | Languages passed to engines that need them (Tesseract, EasyOCR); default `en,fr,de,es,it,nl,pt` |
 | `--json` / `--with-ocr` | JSON output / include raw OCR words |
 | `--csv FILE` | One row per image with every supported field |
@@ -257,8 +258,12 @@ The image ships Tesseract (7 languages) and RapidOCR.
 Should the project offer several engines or pick one? **Several, behind one parameter.**
 There is no single best engine for every deployment: accuracy, speed, install size,
 hardware (CPU vs GPU) and licence all trade off against each other. The benchmark below
-measures those trade-offs on real photos, and `engine="auto"` follows the measured
-ranking (classic engines only, so `auto` never downloads gigabytes of VLM weights).
+measures those trade-offs on real photos. `engine="auto"` picks the first installed engine
+of a fixed preference list (classic engines only, so `auto` never downloads gigabytes of VLM
+weights). The list favours light, fast, permissively licensed engines: the `ultralytics`
+engine has the highest F1 of the engines measured so far, but it is an optional extra,
+AGPL-3.0 and far slower, so it is last in the list and is chosen only by name
+(`engine="ultralytics"`).
 
 | Engine | Family | Output | Hardware | Licence (code / weights) |
 |---|---|---|---|---|
@@ -268,6 +273,7 @@ ranking (classic engines only, so `auto` never downloads gigabytes of VLM weight
 | `doctr` | DBNet/FAST + CRNN | words + boxes | CPU / GPU | Apache-2.0 |
 | `easyocr` | CRAFT + CRNN | lines + boxes | CPU / GPU | Apache-2.0 |
 | `tesseract` | LSTM | words + boxes | CPU | Apache-2.0 |
+| `ultralytics` | YOLO26 oriented-box text detector + PP-OCRv6 recogniser (ONNX Runtime) | words + boxes | CPU / GPU | AGPL-3.0 |
 | `paddleocr-vl` | document VLM (PaddleOCR-VL) | markdown | GPU recommended | Apache-2.0 |
 | `olmocr` | VLM, `allenai/olmOCR-2-7B-1025` | markdown | GPU | Apache-2.0 |
 | `glm-ocr` | VLM, `zai-org/GLM-OCR` | markdown | GPU | see model card |
@@ -276,6 +282,11 @@ ranking (classic engines only, so `auto` never downloads gigabytes of VLM weight
 | `deepseek-ocr` | VLM, `deepseek-ai/DeepSeek-OCR-2` | markdown | GPU (vLLM recommended) | Apache-2.0 |
 | `qwen-vl` | general VLM, `Qwen/Qwen2.5-VL-3B-Instruct` | markdown | GPU | see model card |
 | `vlm` | any model on a local OpenAI-compatible server | markdown | your server | depends on the model |
+
+The `ultralytics` engine picks its YOLO26 detector size with a suffix (`ultralytics:n`,
+`:s`, `:m`, `:l`, `:x`; default `x`) or `get_engine("ultralytics", size="n", imgsz=1280)`. It needs
+Python 3.11+, downloads its weights on first use, and is licensed AGPL-3.0, so check that
+against your use case before shipping it.
 
 Vision-language models return text rather than word boxes; `nutrilabel` lays that text
 out on a grid so the same extractor and the same benchmark apply to every engine. Using
@@ -336,18 +347,26 @@ OCR latency.
 | Engine | F1 | Precision | Recall | Perfect labels | OCR value recall | OCR s/img |
 |---|---:|---:|---:|---:|---:|---:|
 | Reference OCR (Google Cloud Vision tokens shipped with the dataset)* | **0.834** | 0.887 | 0.787 | 41.9 % | 98.0 % | - |
+| YOLO26-s text detector + PP-OCRv6 recognizer (`ultralytics:s`) | **0.742** | 0.774 | 0.712 | 20.1 % | 95.8 % | 119.0 |
 | `rapidocr` (ONNX, CPU) | **0.730** | 0.856 | 0.636 | 17.6 % | 88.3 % | 5.7 |
 | `doctr` | 0.699 | 0.808 | 0.617 | 18.1 % | 80.6 % | 4.1 |
 | `easyocr` | 0.544 | 0.677 | 0.454 | 6.0 % | 52.3 % | 8.6 |
-| `paddleocr`, `surya`, `tesseract` | run `make benchmark` | | | | | |
+| `paddleocr`, `surya`, `tesseract` | not benchmarked yet: run `make benchmark` | | | | | |
 | `paddleocr-vl`, `olmocr`, `glm-ocr`, `chandra`, ... (GPU) | run `python -m benchmark.run --engines all-vlm` | | | | | |
 
 \* The reference row feeds the dataset's own OCR tokens to the extractor, so it measures
 the **extraction** quality with near-perfect OCR: about 4 out of 5 annotated values are
 recovered, with ~89 % precision, on real photos, without any training. The extractor was
 tuned on the train split only; the test split was held out. The open-source rows were run
-on CPU (OCR time is the median per image); the light `rapidocr` engine gets closest to the
-reference. Other engines can be added by running the benchmark on your machine (it downloads
+on CPU (OCR time is the median per image in seconds, as the benchmark recorded it). Among them,
+`ultralytics:s` has the highest F1 (0.742) thanks to recall: it reads 95.8 % of the annotated
+numbers and recovers more fields (recall 0.712 against 0.636). `rapidocr` is more precise
+(0.856 against 0.774) and its recorded median OCR time is 5.7 s against 119.0 s, so for most uses it
+remains the practical default; the F1 gap between the two is 0.012 on 199 images and was not
+tested for significance. On the 10 worst images of `ultralytics:s`, the larger `ultralytics:x`
+detector raised the F1 of 4 and the mean from 0.041 to 0.104; three of the four images that stay at 0 are
+extraction errors rather than OCR errors
+([details](docs/benchmark.md#hard-image-comparison)). Other engines can be added by running the benchmark on your machine (it downloads
 650 MB of images and the engines' models), which also updates
 [docs/benchmark_results.md](docs/benchmark_results.md) and the charts below.
 
@@ -358,6 +377,10 @@ reference. Other engines can be added by running the benchmark on your machine (
 Real photos from the test split read by `rapidocr` (values highlighted in the colour of their nutrient):
 
 <p align="center"><img src="docs/assets/real_examples.gif" alt="Real Open Food Facts photos read by rapidocr" width="820"></p>
+
+The same kind of gallery for the `ultralytics:s` engine (YOLO26-s text detector + PP-OCRv6 recognizer); six test-split photos from its cached benchmark OCR, picked among those it reads without false values (three tiny-text or partly missed photos left out by hand):
+
+<p align="center"><img src="docs/assets/real_examples_ultralytics.gif" alt="Real Open Food Facts photos read by ultralytics:s" width="820"></p>
 
 <sub>Photos: Open Food Facts contributors, via the `openfoodfacts/nutrient-detection-layout` dataset (CC BY-SA 3.0).</sub>
 
@@ -401,7 +424,7 @@ nutrilabel-ocr/
 ├── src/nutrilabel/
 │   ├── engines/          # OCR engine registry and adapters
 │   │   ├── base.py       #   OCREngine interface
-│   │   ├── classic.py    #   PaddleOCR, RapidOCR, Surya, docTR, EasyOCR, Tesseract
+│   │   ├── classic.py    #   PaddleOCR, RapidOCR, Surya, docTR, EasyOCR, Tesseract, Ultralytics
 │   │   └── vlm.py        #   PaddleOCR-VL, olmOCR, GLM-OCR, Chandra, ... and local servers (also the generic `hf-vlm` class)
 │   ├── extraction/       # words -> nutrients
 │   │   ├── extractor.py  #   layout-aware matching (rows, columns, orientation)

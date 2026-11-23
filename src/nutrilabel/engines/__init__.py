@@ -16,6 +16,7 @@ from nutrilabel.engines.classic import (
     RapidOCREngine,
     SuryaEngine,
     TesseractEngine,
+    UltralyticsEngine,
 )
 from nutrilabel.engines.vlm import (
     HF_VLM_ENGINES,
@@ -28,13 +29,16 @@ from nutrilabel.engines.vlm import (
 ENGINES: dict[str, type[OCREngine]] = {
     cls.name: cls
     for cls in (PaddleOCREngine, RapidOCREngine, DocTREngine, EasyOCREngine, TesseractEngine,
-                SuryaEngine, PaddleOCRVLEngine, *HF_VLM_ENGINES, HFVLMEngine, VLMEngine)
+                SuryaEngine, UltralyticsEngine, PaddleOCRVLEngine, *HF_VLM_ENGINES, HFVLMEngine, VLMEngine)
 }
 
 #: Classic OCR engines (word/line boxes, CPU friendly). ``engine="auto"`` picks from
-#: these, in this order - keep it in sync with the latest benchmark
-#: (``python -m benchmark.report`` prints the recommended order).
-PREFERENCE: list[str] = ["paddleocr", "rapidocr", "surya", "doctr", "easyocr", "tesseract"]
+#: these, in this order. The order favours light, fast, permissively licensed engines;
+#: ``ultralytics`` has the highest F1 in the benchmark but is optional, AGPL-3.0 and much
+#: slower, so it stays last and is selected by name. ``python -m benchmark.report`` prints
+#: the order by F1 for reference.
+PREFERENCE: list[str] = ["paddleocr", "rapidocr", "surya", "doctr", "easyocr", "tesseract",
+                           "ultralytics"]
 
 #: Vision-language OCR models (text output, GPU recommended). Never chosen by "auto"
 #: because a first call downloads several GB of weights.
@@ -48,8 +52,11 @@ def available_engines(include_vlm: bool = False) -> list[str]:
 
 
 def get_engine(name: str = "auto", **kwargs) -> OCREngine:
-    """Instantiate an engine by name (``"auto"`` picks the best installed one)."""
+    """Instantiate an engine by name (``"auto"`` picks the first installed one in ``PREFERENCE``)."""
     key = name.lower().strip()
+    if key.startswith("ultralytics:"):  # "ultralytics:n" -> detector size n
+        key, size = key.split(":", 1)
+        kwargs.setdefault("size", size)
     if key == "auto":
         installed = available_engines()
         if not installed:
@@ -84,6 +91,7 @@ __all__ = [
     "RapidOCREngine",
     "SuryaEngine",
     "TesseractEngine",
+    "UltralyticsEngine",
     "VLMEngine",
     "OCREngine",
     "available_engines",
