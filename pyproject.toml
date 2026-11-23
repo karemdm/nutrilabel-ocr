@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Karem Marcomini" }]
-keywords = ["ocr", "nutrition", "food", "information-extraction", "paddleocr", "tesseract", "open-food-facts"]
+keywords = ["ocr", "nutrition", "food", "information-extraction", "paddleocr", "tesseract", "ultralytics", "open-food-facts"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -33,9 +33,10 @@ vlm = ["transformers>=4.57", "torch>=2.3", "accelerate>=0.30", "torchvision"]
 paddle-vl = ["paddleocr[doc-parser]>=3.3", "paddlepaddle>=3.0"]
 easyocr = ["easyocr>=1.7"]
 doctr = ["python-doctr[torch]>=0.8"]
+ultralytics = ["ultralytics>=8.4.215", "onnxruntime>=1.26"]  # AGPL-3.0; Python >= 3.11
 benchmark = ["datasets>=2.18", "matplotlib>=3.7"]
 dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4", "pytesseract>=0.3.10", "matplotlib>=3.7"]
-all = ["nutrilabel-ocr[tesseract,rapidocr,paddle,easyocr,doctr,surya,benchmark]"]  # paddle-vl: install separately (GPU)
+all = ["nutrilabel-ocr[tesseract,rapidocr,paddle,easyocr,doctr,surya,benchmark]"]  # paddle-vl (GPU) and ultralytics (Python >= 3.11, AGPL-3.0): install separately
 
 [project.scripts]
 nutrilabel = "nutrilabel.cli:main"
