@@ -121,7 +121,7 @@ def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> No
 
     out_dir = assets / "examples"
     out_dir.mkdir(parents=True, exist_ok=True)
-    preds = [json.loads(line) for line in (results / engine / "predictions.jsonl").open()]
+    preds = [json.loads(line) for line in (results / engine.replace(":", "-") / "predictions.jsonl").open()]
     good = {p["idx"] for p in preds if p.get("tp") and len(p["tp"]) >= 6 and not p.get("fp")}
     if engine in SYNTHETIC_BOX_ENGINES:
         print(f"{engine} returns text only (no boxes): gallery skipped")
@@ -131,7 +131,7 @@ def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> No
     for s in iter_hf(split):
         if s.idx not in good:
             continue
-        cache = results / "ocr" / engine / f"{s.idx:05d}.json"
+        cache = results / "ocr" / engine.replace(":", "-") / f"{s.idx:05d}.json"
         if not cache.exists():
             continue
         ocr = OCRResult.from_dict(json.loads(cache.read_text(encoding="utf-8")))
