@@ -40,8 +40,12 @@ def _font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
 
 def draw_result(image: ImageInput, result: ExtractionResult, show_ocr: bool = True,
                 panel: bool = True) -> Image.Image:
-    """Return a copy of the image with OCR boxes (grey) and extracted values (coloured),
-    plus an optional side panel listing the values."""
+    """Return a copy of the image annotated with the result.
+
+    OCR boxes are drawn in grey (``show_ocr``) and extracted values in the colour of their
+    nutrient; ``panel`` appends a side table listing the values. Engines that return text
+    only (``SYNTHETIC_BOX_ENGINES``) get the panel alone.
+    """
     img = load_image(image).copy()
     draw = ImageDraw.Draw(img, "RGBA")
     scale = max(img.size) / 1000

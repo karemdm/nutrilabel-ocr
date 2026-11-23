@@ -135,6 +135,8 @@ _HEADER_CONTEXT = re.compile(
 
 @dataclass
 class Anchor:
+    """A nutrient name found on a line of the label (e.g. "Fat"), with its box."""
+
     nutrient: str  # "fat", "energy", ...
     bbox: BBox
     text: str
@@ -144,6 +146,8 @@ class Anchor:
 
 @dataclass
 class Value:
+    """A parsed number (with unit) found on the label, and whether a label has claimed it."""
+
     parsed: ParsedValue
     bbox: BBox
     raw: str
@@ -188,6 +192,7 @@ class NutritionExtractor:
 
     # ------------------------------------------------------------------ public API
     def extract(self, ocr: OCRResult | list[Word]) -> ExtractionResult:
+        """Extract nutrient values from an :class:`OCRResult` or a plain list of words."""
         words = ocr.words if isinstance(ocr, OCRResult) else ocr
         # Photos taken sideways: OCR engines that keep the page orientation return tall,
         # narrow word boxes. Re-run in rotated coordinates and keep the richer result

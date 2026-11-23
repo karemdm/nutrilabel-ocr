@@ -18,6 +18,8 @@ IGNORED = "_ignored"
 
 @dataclass(frozen=True)
 class Nutrient:
+    """One nutrient: its output name, value kind and the regex that finds its label."""
+
     name: str
     kind: str  # "energy_kj" | "energy_kcal" | "energy" | "mass"
     pattern: re.Pattern[str]
@@ -231,7 +233,7 @@ HEADER_SERVING = re.compile(
 )
 # "% of reference intake / daily value" columns, which are not reported.
 HEADER_PCT = re.compile(
-    r"%|\b(?:ar|ri|gda|dv|vd|vq|vnr|nrv|ajr|cdr|ir|rda|vrn|ddr|gda|rm|ri\*+|ar\*+)\b|"
+    r"%|\b(?:ar|ri|gda|dv|vd|vq|vnr|nrv|ajr|cdr|ir|rda|vrn|ddr|rm|ri\*+|ar\*+)\b|"
     r"\breference intake|\bapports? de reference|\breferenzmenge|\bassunzioni di riferimento|"
     r"\bingestas? de referencia|\bdaily value|\bvaleur quotidienne"
 )
@@ -256,6 +258,7 @@ def normalize_text(text: str) -> str:
 
 
 def nutrient_kind(name: str) -> str:
+    """Return the kind (``mass``, ``energy_kj`` or ``energy_kcal``) of a nutrient name; ``KeyError`` if unknown."""
     for n in NUTRIENTS:
         if n.name == name:
             return n.kind

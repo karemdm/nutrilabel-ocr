@@ -28,7 +28,7 @@ class NutritionReader:
     extractor:
         A custom :class:`NutritionExtractor`; defaults to one with its default settings.
     min_fields:
-        Minimum number of nutrients below which the rotation retry is tried.
+        The rotation retry runs only when fewer than this many nutrients were found.
     max_side:
         Longest image side fed to the OCR engine, in pixels.
     auto_rotate:

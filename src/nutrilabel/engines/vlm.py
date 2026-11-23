@@ -23,8 +23,10 @@ VLM_PROMPT = (
 
 
 class PaddleOCRVLEngine(OCREngine):
-    """PaddleOCR-VL (document-parsing VLM, ``paddleocr[doc-parser]>=3.3``). Experimental; a GPU is
-    strongly recommended."""
+    """PaddleOCR-VL document-parsing VLM (``paddleocr[doc-parser]>=3.3``).
+
+    Experimental; a GPU is strongly recommended.
+    """
 
     name: ClassVar[str] = "paddleocr-vl"
     pip_extra: ClassVar[str] = "paddle-vl"
@@ -107,6 +109,7 @@ class VLMEngine(OCREngine):
             raise EngineNotAvailable("set NUTRILABEL_VLM_MODEL (and NUTRILABEL_VLM_URL)")
 
     def request_payload(self, image: np.ndarray) -> dict[str, Any]:
+        """Build the OpenAI-style chat request: the prompt plus the image as a base64 JPEG."""
         import base64
         import io
 
@@ -200,6 +203,7 @@ class HFVLMEngine(OCREngine):
         return {"dtype" if (major, minor) >= (4, 56) else "torch_dtype": self.torch_dtype}
 
     def generate_text(self, image: np.ndarray) -> str:
+        """Greedy-decode the model transcription of the image."""
         import torch
         from PIL import Image
 

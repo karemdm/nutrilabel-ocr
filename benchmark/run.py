@@ -63,6 +63,7 @@ def _ocr_cached(engine_name: str, engine, sample: Sample, cache_dir: Path, max_s
 
 
 def evaluate_engine(name: str, samples: list[Sample], out: Path, max_side: int) -> dict:
+    """Score one engine (or the ``gcv`` reference) on the samples and return its summary dict."""
     extractor = NutritionExtractor()
     engine = None if name == REFERENCE else get_engine(name)
     report = Report()
