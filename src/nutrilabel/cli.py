@@ -174,7 +174,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p_ui = sub.add_parser("ui", help="open the local web interface (single image or folder)")
     p_ui.add_argument("-e", "--engine", default="auto",
-                      help="engine preselected in the page (default: auto, best installed classic engine)")
+                      help="engine preselected in the page (default: auto, first installed classic engine in the preference list)")
     p_ui.add_argument("--host", default="127.0.0.1",
                       help="address to bind (default: 127.0.0.1; use 0.0.0.0 only in a container)")
     p_ui.add_argument("--port", type=int, default=8765, help="port (default: 8765)")

@@ -33,8 +33,10 @@ ENGINES: dict[str, type[OCREngine]] = {
 }
 
 #: Classic OCR engines (word/line boxes, CPU friendly). ``engine="auto"`` picks from
-#: these, in this order - keep it in sync with the latest benchmark
-#: (``python -m benchmark.report`` prints the recommended order).
+#: these, in this order. The order favours light, fast, permissively licensed engines;
+#: ``ultralytics`` has the highest F1 in the benchmark but is optional, AGPL-3.0 and much
+#: slower, so it stays last and is selected by name. ``python -m benchmark.report`` prints
+#: the order by F1 for reference.
 PREFERENCE: list[str] = ["paddleocr", "rapidocr", "surya", "doctr", "easyocr", "tesseract",
                            "ultralytics"]
 
@@ -50,7 +52,7 @@ def available_engines(include_vlm: bool = False) -> list[str]:
 
 
 def get_engine(name: str = "auto", **kwargs) -> OCREngine:
-    """Instantiate an engine by name (``"auto"`` picks the best installed one)."""
+    """Instantiate an engine by name (``"auto"`` picks the first installed one in ``PREFERENCE``)."""
     key = name.lower().strip()
     if key.startswith("ultralytics:"):  # "ultralytics:n" -> detector size n
         key, size = key.split(":", 1)
