@@ -16,6 +16,7 @@ from nutrilabel.engines.classic import (
     RapidOCREngine,
     SuryaEngine,
     TesseractEngine,
+    UltralyticsEngine,
 )
 from nutrilabel.engines.vlm import (
     HF_VLM_ENGINES,
@@ -28,13 +29,14 @@ from nutrilabel.engines.vlm import (
 ENGINES: dict[str, type[OCREngine]] = {
     cls.name: cls
     for cls in (PaddleOCREngine, RapidOCREngine, DocTREngine, EasyOCREngine, TesseractEngine,
-                SuryaEngine, PaddleOCRVLEngine, *HF_VLM_ENGINES, HFVLMEngine, VLMEngine)
+                SuryaEngine, UltralyticsEngine, PaddleOCRVLEngine, *HF_VLM_ENGINES, HFVLMEngine, VLMEngine)
 }
 
 #: Classic OCR engines (word/line boxes, CPU friendly). ``engine="auto"`` picks from
 #: these, in this order - keep it in sync with the latest benchmark
 #: (``python -m benchmark.report`` prints the recommended order).
-PREFERENCE: list[str] = ["paddleocr", "rapidocr", "surya", "doctr", "easyocr", "tesseract"]
+PREFERENCE: list[str] = ["paddleocr", "rapidocr", "surya", "doctr", "easyocr", "tesseract",
+                           "ultralytics"]
 
 #: Vision-language OCR models (text output, GPU recommended). Never chosen by "auto"
 #: because a first call downloads several GB of weights.
@@ -50,6 +52,9 @@ def available_engines(include_vlm: bool = False) -> list[str]:
 def get_engine(name: str = "auto", **kwargs) -> OCREngine:
     """Instantiate an engine by name (``"auto"`` picks the best installed one)."""
     key = name.lower().strip()
+    if key.startswith("ultralytics:"):  # "ultralytics:n" -> detector size n
+        key, size = key.split(":", 1)
+        kwargs.setdefault("size", size)
     if key == "auto":
         installed = available_engines()
         if not installed:
@@ -84,6 +89,7 @@ __all__ = [
     "RapidOCREngine",
     "SuryaEngine",
     "TesseractEngine",
+    "UltralyticsEngine",
     "VLMEngine",
     "OCREngine",
     "available_engines",
