@@ -7,7 +7,7 @@
 [![CI](https://github.com/karemdm/nutrilabel-ocr/actions/workflows/ci.yml/badge.svg)](https://github.com/karemdm/nutrilabel-ocr/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Engines](https://img.shields.io/badge/OCR%20engines-14-orange)
+![Engines](https://img.shields.io/badge/OCR%20engines-15-orange)
 
 <img src="docs/assets/demo.gif" alt="Package photo in, OCR boxes, extracted nutrient table out" width="820">
 
@@ -50,7 +50,7 @@ from [Open Food Facts](https://world.openfoodfacts.org/).
 
 | | |
 |---|---|
-| **14 OCR engines, one parameter** | `engine="paddleocr"`, `"rapidocr"`, `"surya"`, `"doctr"`, `"easyocr"`, `"tesseract"`, `"paddleocr-vl"`, `"olmocr"`, `"glm-ocr"`, `"chandra"`, `"nanonets-ocr"`, `"deepseek-ocr"`, `"qwen-vl"`, or any model behind a local Ollama / vLLM server (`"vlm"`). |
+| **15 OCR engines, one parameter** | `engine="paddleocr"`, `"rapidocr"`, `"surya"`, `"doctr"`, `"easyocr"`, `"tesseract"`, `"ultralytics"`, `"paddleocr-vl"`, `"olmocr"`, `"glm-ocr"`, `"chandra"`, `"nanonets-ocr"`, `"deepseek-ocr"`, `"qwen-vl"`, or any model behind a local Ollama / vLLM server (`"vlm"`). |
 | **Real nutrition-table understanding** | Per-100 g vs per-serving columns, kJ/kcal stacked in one cell, "% reference intake" columns ignored, US *Nutrition Facts* panels, labels printed as a sentence, photos taken sideways, horizontal tables. |
 | **Multilingual** | English, French, German, Spanish, Italian, Dutch, Portuguese (including Brazilian ANVISA tables with *Quantidade por porção* / *%VD*), Croatian, Slovenian, Czech, Polish, Hungarian, Danish, Swedish, Finnish, Romanian. |
 | **Self-checking** | Nutritional sanity rules (saturated fat <= fat, sugars <= carbs, <= 100 g per 100 g, kJ ~ 4.184 x kcal) catch and repair typical OCR slips such as a lost decimal separator. |
@@ -110,6 +110,7 @@ Pick the engines you want; extras can be combined (`pip install -e ".[paddle,tes
 | `surya` | `surya` | Transformer OCR, 90+ languages |
 | `doctr` | `doctr` | docTR (PyTorch) |
 | `easyocr` | `easyocr` | EasyOCR (PyTorch) |
+| `ultralytics` | `ultralytics` | Ultralytics OCR solution (YOLO26 text detector + PP-OCRv6 on ONNX Runtime); Python 3.11+, AGPL-3.0 |
 | `tesseract` | `tesseract` | Also needs the binary: `apt install tesseract-ocr tesseract-ocr-fra ...` / `brew install tesseract` / [Windows installer](https://github.com/UB-Mannheim/tesseract/wiki) |
 | `paddle-vl` | `paddleocr-vl` | PaddleOCR-VL document VLM, GPU recommended |
 | `vlm` | `olmocr`, `glm-ocr`, `chandra`, `nanonets-ocr`, `deepseek-ocr`, `qwen-vl` | Hugging Face `transformers` + PyTorch, GPU strongly recommended (weights: 2-16 GB) |
@@ -268,6 +269,7 @@ ranking (classic engines only, so `auto` never downloads gigabytes of VLM weight
 | `doctr` | DBNet/FAST + CRNN | words + boxes | CPU / GPU | Apache-2.0 |
 | `easyocr` | CRAFT + CRNN | lines + boxes | CPU / GPU | Apache-2.0 |
 | `tesseract` | LSTM | words + boxes | CPU | Apache-2.0 |
+| `ultralytics` | YOLO26 oriented-box text detector + PP-OCRv6 recogniser (ONNX Runtime) | words + boxes | CPU / GPU | AGPL-3.0 |
 | `paddleocr-vl` | document VLM (PaddleOCR-VL) | markdown | GPU recommended | Apache-2.0 |
 | `olmocr` | VLM, `allenai/olmOCR-2-7B-1025` | markdown | GPU | Apache-2.0 |
 | `glm-ocr` | VLM, `zai-org/GLM-OCR` | markdown | GPU | see model card |
@@ -276,6 +278,11 @@ ranking (classic engines only, so `auto` never downloads gigabytes of VLM weight
 | `deepseek-ocr` | VLM, `deepseek-ai/DeepSeek-OCR-2` | markdown | GPU (vLLM recommended) | Apache-2.0 |
 | `qwen-vl` | general VLM, `Qwen/Qwen2.5-VL-3B-Instruct` | markdown | GPU | see model card |
 | `vlm` | any model on a local OpenAI-compatible server | markdown | your server | depends on the model |
+
+The `ultralytics` engine picks its YOLO26 detector size with a suffix (`ultralytics:n`,
+`:s`, `:m`, `:l`, `:x`; default `x`) or `get_engine("ultralytics", size="n", imgsz=1280)`. It needs
+Python 3.11+, downloads its weights on first use, and is licensed AGPL-3.0, so check that
+against your use case before shipping it.
 
 Vision-language models return text rather than word boxes; `nutrilabel` lays that text
 out on a grid so the same extractor and the same benchmark apply to every engine. Using
@@ -401,7 +408,7 @@ nutrilabel-ocr/
 ├── src/nutrilabel/
 │   ├── engines/          # OCR engine registry and adapters
 │   │   ├── base.py       #   OCREngine interface
-│   │   ├── classic.py    #   PaddleOCR, RapidOCR, Surya, docTR, EasyOCR, Tesseract
+│   │   ├── classic.py    #   PaddleOCR, RapidOCR, Surya, docTR, EasyOCR, Tesseract, Ultralytics
 │   │   └── vlm.py        #   PaddleOCR-VL, olmOCR, GLM-OCR, Chandra, ... and local servers (also the generic `hf-vlm` class)
 │   ├── extraction/       # words -> nutrients
 │   │   ├── extractor.py  #   layout-aware matching (rows, columns, orientation)
