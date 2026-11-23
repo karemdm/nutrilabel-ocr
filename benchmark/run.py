@@ -43,7 +43,8 @@ REFERENCE = "gcv"  # the dataset's own Google Cloud Vision tokens
 
 
 def _ocr_cached(engine_name: str, engine, sample: Sample, cache_dir: Path, max_side: int) -> OCRResult:
-    path = cache_dir / engine_name / f"{sample.idx:05d}.json"
+    # engine names may carry a variant ("ultralytics:s"); ":" is not allowed in Windows folder names
+    path = cache_dir / engine_name.replace(":", "-") / f"{sample.idx:05d}.json"
     if path.exists():
         return OCRResult.from_dict(json.loads(path.read_text(encoding="utf-8")))
     array, scale = prepare(sample.image, max_side=max_side)
