@@ -99,7 +99,7 @@ python -m benchmark.report --gallery 6      # plus annotated real examples and a
 | `--max-side` | `1600` | Longest image side fed to the OCR engine |
 | `--out` | `benchmark/results` | Output directory |
 
-OCR output is cached per engine and image under `benchmark/results/ocr/<engine>/<idx>.json`. Re-running reads the cache, so extractor changes can be re-scored without repeating OCR; delete the folder to force fresh OCR (and fresh latency). Existing entries in `summary.json` for other engines are kept when you run a subset.
+OCR output is cached per engine and image under `benchmark/results/ocr/<engine>/<idx>.json` (`idx` zero-padded to five digits). Re-running reads the cache, so extractor changes can be re-scored without repeating OCR; delete the folder to force fresh OCR (and fresh latency). Existing entries in `summary.json` for other engines are kept when you run a subset.
 
 `report.py` options: `--results` (default `benchmark/results`), `--docs` (default `docs`), `--gallery N` and `--gallery-engine` (defaults to the best non-reference engine). It prints a recommended `PREFERENCE` order for `src/nutrilabel/engines/__init__.py`. The gallery skips engines without real boxes (text-only VLMs).
 
@@ -109,7 +109,7 @@ OCR output is cached per engine and image under `benchmark/results/ocr/<engine>/
 |---|---|---|
 | `benchmark/results/summary.json` | `run` | Metrics per engine |
 | `benchmark/results/<engine>/predictions.jsonl` | `run` | Per image: gold, prediction, TP/FP/FN keys, OCR seconds, warnings, or the error |
-| `benchmark/results/ocr/<engine>/<idx>.json` | `run` | Cached OCR words |
+| `benchmark/results/ocr/<engine>/<idx>.json` (`idx` zero-padded to five digits) | `run` | Cached OCR words |
 | `docs/benchmark_results.md` | `report` | Results table |
 | `docs/assets/per_nutrient_f1.png` | `report` | Heatmap of F1 per nutrient and engine |
 | `docs/assets/f1_vs_latency.png` | `report` | F1 against median OCR time; drawn only if some engine has a latency |

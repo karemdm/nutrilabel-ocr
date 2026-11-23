@@ -46,7 +46,7 @@ Order matters: more specific patterns run first and consume their character span
 
 `_find_values` parses every atom with `parsing.parse_value`, which handles decimal commas, thousands separators (`1.873 kJ`), qualifiers (`<0.5 g`, `less than`), unit aliases (`gr`, `mcg`, `kj`) and common OCR digit confusions (`Og` read as `0 g`, `O`, `l`, `I`, `S` inside a number). A bare unit atom directly to the right of a number is merged into it (`4,5` + `g`). Values in `%` or `ml` are dropped, and a bare `100` on a header line ("per 100 g") is dropped so it is not mistaken for a value.
 
-`_repair_g_as_9` fixes the classic slip where `7,5 g` is read as `7,59`. It only applies to unit-less values that end in a 9 after two or more decimals, and only when at least three values on the label carry an explicit `g`/`mg` unit that make up 60 % or more of the unit-bearing values.
+`_repair_g_as_9` fixes the classic slip where `7,5 g` is read as `7,59`. It only applies to unit-less values that end in a 9 after two or more decimals, and only when either at least three values on the label carry an explicit `g`/`mg` unit that make up 60 % or more of the unit-bearing values, or the slip is systematic (at least three such suspects, 60 % or more of the unit-less decimals).
 
 ## Row matching
 

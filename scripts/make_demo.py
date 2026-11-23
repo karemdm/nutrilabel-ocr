@@ -16,14 +16,15 @@ from PIL import Image, ImageDraw
 
 from nutrilabel import NutritionReader
 from nutrilabel.evaluation.synthetic import as_package_photo, render_label
-from nutrilabel.imaging.viz import _font, draw_result
+from nutrilabel.imaging.fonts import get_font
+from nutrilabel.imaging.viz import draw_result
 
 
 def _caption(img: Image.Image, text: str) -> Image.Image:
     fs = max(18, img.height // 22)
     out = Image.new("RGB", (img.width, img.height + fs * 2), "white")
     out.paste(img, (0, fs * 2))
-    ImageDraw.Draw(out).text((fs // 2, fs // 2), text, fill=(25, 25, 25), font=_font(fs))
+    ImageDraw.Draw(out).text((fs // 2, fs // 2), text, fill=(25, 25, 25), font=get_font(fs))
     return out
 
 

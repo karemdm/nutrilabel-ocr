@@ -70,6 +70,7 @@ class TesseractEngine(OCREngine):
 
 
 def tesseract_data_to_words(data: dict[str, list[Any]]) -> list[Word]:
+    """Convert ``pytesseract.image_to_data`` output (dict form) to words; rows without text or with conf < 0 are skipped."""
     words = []
     for text, conf, x, y, w, h in zip(
         data["text"], data["conf"], data["left"], data["top"], data["width"], data["height"]
@@ -113,6 +114,7 @@ class EasyOCREngine(OCREngine):
 
 
 def easyocr_to_words(result: list[Any]) -> list[Word]:
+    """Convert EasyOCR ``readtext(detail=1)`` output ``[(polygon, text, conf), ...]`` to words."""
     return [Word(str(text), BBox.from_points(pts), float(conf)) for pts, text, conf in result]
 
 
@@ -207,6 +209,7 @@ class PaddleOCREngine(OCREngine):
 
 
 def paddle_v2_to_words(result: list[Any] | None) -> list[Word]:
+    """Convert PaddleOCR 2.x ``.ocr()`` output to words."""
     words: list[Word] = []
     for page in result or []:
         for item in page or []:
@@ -216,6 +219,7 @@ def paddle_v2_to_words(result: list[Any] | None) -> list[Word]:
 
 
 def paddle_v3_to_words(result: list[Any] | None) -> list[Word]:
+    """Convert PaddleOCR 3.x ``.predict()`` results (``rec_texts`` / ``rec_polys``) to words."""
     words: list[Word] = []
     for page in result or []:
         get = page.get if hasattr(page, "get") else lambda k, d=None, p=page: getattr(p, k, d)
@@ -273,6 +277,7 @@ class RapidOCREngine(OCREngine):
 
 
 def rapidocr_to_words(output: Any) -> list[Word]:
+    """Convert RapidOCR output (``rapidocr`` >= 2 object or the older tuple form) to words."""
     words: list[Word] = []
     # rapidocr >= 2: an object with .boxes / .txts / .scores
     if hasattr(output, "txts"):
@@ -321,6 +326,7 @@ class DocTREngine(OCREngine):
 
 
 def doctr_export_to_words(export: dict[str, Any], width: int, height: int) -> list[Word]:
+    """Convert a docTR ``export()`` dict (relative geometry) to words in pixel coordinates."""
     words: list[Word] = []
     for page in export.get("pages", []):
         for block in page.get("blocks", []):
@@ -400,6 +406,7 @@ class SuryaEngine(OCREngine):
 
 
 def surya_to_words(preds: list[Any]) -> list[Word]:
+    """Convert Surya recognition predictions (one box per text line) to words."""
     words: list[Word] = []
     for page in preds or []:
         for line in getattr(page, "text_lines", []) or []:

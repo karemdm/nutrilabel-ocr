@@ -48,12 +48,15 @@ _OCR_DIGIT_FIX = str.maketrans({"O": "0", "o": "0", "D": "0", "l": "1", "I": "1"
 
 @dataclass(frozen=True)
 class ParsedValue:
+    """A number with its canonical unit (or ``None``) and qualifier (``<``, ``>``, ``~`` or empty)."""
+
     value: float
     unit: str | None
     qualifier: str = ""
 
 
 def clean_token(text: str) -> str:
+    """Strip whitespace and edge punctuation (brackets, colons, asterisks...) from a token."""
     return text.strip().strip(_EDGE_PUNCT).strip()
 
 

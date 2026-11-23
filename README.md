@@ -11,7 +11,7 @@
 
 <img src="docs/assets/demo.gif" alt="Package photo in, OCR boxes, extracted nutrient table out" width="820">
 
-<sub>Package photos rendered by the test-suite and read by Tesseract, the weakest engine; benchmark numbers below are on real photos.</sub>
+<sub>Package photos rendered by the test suite and read by Tesseract, which misreads a few fields (16/18 and 15/18 correct on two of the packs); the benchmark numbers below are on real photos.</sub>
 
 </div>
 
@@ -72,8 +72,8 @@ timings. A summary table compares all images, and results export to CSV or JSON.
 
 <p align="center"><img src="docs/assets/ui.png" alt="nutrilabel web interface: original photo, extraction and nutrient table" width="900"></p>
 
-*The real interface, rendered by `scripts/make_ui_snapshot.py` on sample package photos
-(Tesseract engine). Run `python scripts/make_ui_snapshot.py --images your/photos/*.jpg`
+*The real interface, rendered by `scripts/make_ui_snapshot.py` on four rendered package
+photos (PaddleOCR engine). Run `python scripts/make_ui_snapshot.py --images your/photos/*.jpg`
 to render it on your own pictures.*
 
 ## Installation

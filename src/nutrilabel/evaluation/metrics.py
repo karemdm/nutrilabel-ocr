@@ -20,6 +20,8 @@ from nutrilabel.types import BBox, ExtractionResult, OCRResult, Word
 
 @dataclass(frozen=True)
 class GoldField:
+    """One annotated ground-truth field: key, numeric value, unit and the raw tagged text."""
+
     key: str
     value: float
     unit: str | None
@@ -115,6 +117,8 @@ def values_match(key: str, pred_value: float, pred_unit: str | None, gold: GoldF
 
 @dataclass
 class Counts:
+    """True/false positive and false negative counts with derived precision, recall and F1."""
+
     tp: int = 0
     fp: int = 0
     fn: int = 0
@@ -220,6 +224,7 @@ _NUM_RX = re.compile(r"\d{1,5}(?:[.,]\d{1,3})?")
 
 
 def numbers_in_text(text: str) -> set[float]:
+    """Every number in ``text`` (comma read as decimal point, ``Og`` read as ``0g``)."""
     out: set[float] = set()
     for m in _NUM_RX.finditer(text.replace("O g", "0 g").replace("Og", "0g")):
         try:

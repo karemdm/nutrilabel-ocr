@@ -8,5 +8,5 @@ Sources of the files in this folder.
 | `real_examples.gif` | Animation of the `examples/` images, built by `benchmark.report --gallery`. |
 | `demo.gif`, `demo_annotated.png` | Package photos rendered by `nutrilabel.evaluation.synthetic` (no real photos), read and drawn by `scripts/make_demo.py`. |
 | `demo_ui.gif` | Recording of the web interface reading six photos from the dataset above. |
-| `ui.png` | Screenshot of the web interface rendered by `scripts/make_ui_snapshot.py` on synthetic sample labels. |
+| `ui.png` | Screenshot of the web interface rendered by `scripts/make_ui_snapshot.py` on four synthetic sample labels read with the `paddleocr` engine. |
 | `f1_vs_latency.png`, `per_nutrient_f1.png` | Charts generated from `benchmark/results/summary.json` by `python -m benchmark.report`. |

@@ -62,6 +62,11 @@ def _repair(nv: NutrientValue, ok, result: ExtractionResult, why: str) -> None:
 
 
 def check(result: ExtractionResult, repair: bool = True) -> ExtractionResult:
+    """Apply the sanity rules to ``result`` in place and return it.
+
+    With ``repair=True`` values that break a rule are re-read (see the module docstring);
+    with ``repair=False`` they are only reported. Warnings go to ``result.warnings``.
+    """
     n = result.nutrients
     for basis in ("100g", "serving"):
         # 1. at most 100 g per 100 g
