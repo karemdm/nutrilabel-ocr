@@ -103,6 +103,20 @@ OCR output is cached per engine and image under `benchmark/results/ocr/<engine>/
 
 `report.py` options: `--results` (default `benchmark/results`), `--docs` (default `docs`), `--gallery N` and `--gallery-engine` (defaults to the best non-reference engine). It prints a recommended `PREFERENCE` order for `src/nutrilabel/engines/__init__.py`. The gallery skips engines without real boxes (text-only VLMs).
 
+## Hard-image comparison
+
+Purpose: does a larger detector fix the worst cases? `benchmark/compare_hard.py` takes the documents where a base engine scored lowest and re-runs only those with a candidate engine.
+
+```bash
+python -m benchmark.compare_hard --base ultralytics:s --candidate ultralytics:x --n 10
+```
+
+The base engine must already have a `predictions.jsonl` from `benchmark.run`. Per-document F1 is computed from that file's stored TP/FP/FN key lists (the definition above, applied to one document); the N lowest are selected, ties by idx, and documents without gold fields are skipped. The candidate runs through the same OCR cache, extractor and scoring as `run.py`, so its OCR is cached under `benchmark/results/ocr/<candidate>/` and reusable. Output: `benchmark/results/compare_<base>_vs_<candidate>.json` (per-document F1, precision, recall and OCR seconds for both engines, plus means) and a Markdown table on stdout. Options: `--n`, `--split`, `--max-side`, `--out`.
+
+The results are a sample of N images chosen as the base engine's worst, so they are not comparable to the full-split numbers (the base engine is biased low on this sample by construction).
+
+Results: see below once run.
+
 ## Outputs
 
 | File | Written by | Content |
@@ -110,6 +124,7 @@ OCR output is cached per engine and image under `benchmark/results/ocr/<engine>/
 | `benchmark/results/summary.json` | `run` | Metrics per engine |
 | `benchmark/results/<engine>/predictions.jsonl` | `run` | Per image: gold, prediction, TP/FP/FN keys, OCR seconds, warnings, or the error |
 | `benchmark/results/ocr/<engine>/<idx>.json` (`idx` zero-padded to five digits) | `run` | Cached OCR words |
+| `benchmark/results/compare_<base>_vs_<candidate>.json` | `compare_hard` | Hard-image comparison of two engines |
 | `docs/benchmark_results.md` | `report` | Results table |
 | `docs/assets/per_nutrient_f1.png` | `report` | Heatmap of F1 per nutrient and engine |
 | `docs/assets/f1_vs_latency.png` | `report` | F1 against median OCR time; drawn only if some engine has a latency |
