@@ -15,12 +15,14 @@ from nutrilabel.engines import ENGINES, PREFERENCE, VLM_ENGINES, available_engin
 from nutrilabel.engines.base import EngineNotAvailable, OCREngine
 from nutrilabel.engines.classic import (
     TesseractEngine,
+    UltralyticsEngine,
     doctr_export_to_words,
     easyocr_to_words,
     paddle_v2_to_words,
     paddle_v3_to_words,
     rapidocr_to_words,
     tesseract_data_to_words,
+    ultralytics_to_words,
 )
 from nutrilabel.types import BBox, Word
 
@@ -229,6 +231,84 @@ def test_doctr_empty_export():
     """Missing or empty pages give no words."""
     assert doctr_export_to_words({}, 10, 10) == []
     assert doctr_export_to_words({"pages": [{"blocks": []}]}, 10, 10) == []
+
+
+# ------------------------------------------------------------------ Ultralytics
+
+
+def _ult(text, line, poly, conf=0.9):
+    return {"text": text, "confidence": conf, "detection_index": 0, "line": line,
+            "polygon": poly, "detection_confidence": 0.8}
+
+
+def test_ultralytics_polygon_becomes_enclosing_box():
+    """A rotated 4-point polygon is reduced to its axis-aligned box; confidence is the reading's."""
+    poly = [[12, 22], [52, 18], [50, 40], [10, 42]]
+    (w,) = ultralytics_to_words([_ult("Protein", 0, poly, 0.77)])
+    assert w.text == "Protein"
+    assert w.bbox == BBox(10.0, 18.0, 52.0, 42.0)
+    assert w.confidence == pytest.approx(0.77)
+
+
+def test_ultralytics_keeps_reading_order_by_line():
+    """Words come out ordered by line, and by input order within a line."""
+    items = [_ult("c", 1, QUAD), _ult("a", 0, QUAD), _ult("b", 0, QUAD)]
+    assert [w.text for w in ultralytics_to_words(items)] == ["a", "b", "c"]
+
+
+def test_ultralytics_skips_blank_and_empty():
+    """None/empty results and entries without text or polygon give no words."""
+    assert ultralytics_to_words(None) == []
+    assert ultralytics_to_words([]) == []
+    assert ultralytics_to_words([_ult("", 0, QUAD), _ult("x", 0, [])]) == []
+
+
+def _mocked_engine(texts, **kwargs):
+    engine = UltralyticsEngine(**kwargs)
+    engine._ocr = mock.Mock(return_value=SimpleNamespace(texts=texts))
+    return engine
+
+
+def test_ultralytics_engine_read_with_mocked_solution():
+    """The engine passes BGR pixels to the solution and returns words with image size."""
+    engine = _mocked_engine([_ult("Salt", 0, QUAD)])
+    image = np.zeros((60, 80, 3), np.uint8)
+    image[..., 0] = 255  # pure red in RGB
+    res = engine.read(image)
+    assert [w.text for w in res.words] == ["Salt"]
+    assert (res.width, res.height, res.engine) == (80, 60, "ultralytics")
+    sent = engine._ocr.call_args.args[0]
+    assert sent[0, 0].tolist() == [0, 0, 255]  # BGR
+
+
+def test_ultralytics_engine_empty_result():
+    assert _mocked_engine([]).read(np.zeros((10, 10, 3), np.uint8)).words == []
+
+
+def test_ultralytics_options_and_solution_kwargs():
+    """Size selects the weights, imgsz/recognizer/device are forwarded, display and logging are off."""
+    fake = mock.Mock()
+    with mock.patch.dict("sys.modules", {"ultralytics": mock.Mock(),
+                                         "ultralytics.solutions": SimpleNamespace(OCR=fake)}):
+        engine = UltralyticsEngine(size="n", imgsz=640, recognizer="korean_PP-OCRv5_mobile_rec")
+        engine._load()
+    fake.assert_called_once_with(model="yolo26n-text.pt", imgsz=640, show=False, verbose=False,
+                                 recognizer="korean_PP-OCRv5_mobile_rec")
+    assert UltralyticsEngine().model == "yolo26x-text.pt"
+    assert UltralyticsEngine(model="my.pt").model == "my.pt"
+    with pytest.raises(ValueError):
+        UltralyticsEngine(size="xl")
+
+
+def test_ultralytics_variant_name_and_unavailable():
+    """'ultralytics:n' selects the size; a missing package raises EngineNotAvailable."""
+    with mock.patch.object(UltralyticsEngine, "is_available", return_value=True):
+        engine = get_engine("Ultralytics:s")
+    assert isinstance(engine, UltralyticsEngine) and engine.model == "yolo26s-text.pt"
+    with mock.patch.object(UltralyticsEngine, "_check_import", side_effect=ImportError):
+        assert UltralyticsEngine.is_available() is False
+        with pytest.raises(EngineNotAvailable, match="ultralytics"):
+            get_engine("ultralytics")
 
 
 # ------------------------------------------------------------------ Registry
