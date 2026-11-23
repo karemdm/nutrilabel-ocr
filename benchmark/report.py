@@ -23,7 +23,7 @@ ENGINE_LABELS = {
     "doctr": "docTR",
     "easyocr": "EasyOCR",
     "tesseract": "Tesseract 5",
-    "ultralytics": "Ultralytics OCR (YOLO26 + PP-OCRv6)",
+    "ultralytics": "Ultralytics OCR (YOLO26 text detector + PP-OCRv6 recognizer)",
     "surya": "Surya",
     "paddleocr-vl": "PaddleOCR-VL (VLM)",
     "olmocr": "olmOCR-2 7B (VLM)",
@@ -36,6 +36,18 @@ ENGINE_LABELS = {
 }
 
 
+def _label(engine: str, short: bool = False) -> str:
+    """Display name; ``ultralytics:s`` adds the detector size to the base label."""
+    base, _, size = engine.partition(":")
+    if short and base == "ultralytics":
+        return f"Ultralytics OCR ({engine})"
+    if engine in ENGINE_LABELS:
+        return ENGINE_LABELS[engine]
+    if base == "ultralytics" and size:
+        return f"Ultralytics OCR (YOLO26-{size} text detector + PP-OCRv6 recognizer), `{engine}`"
+    return ENGINE_LABELS.get(base, engine)
+
+
 def _table(summaries: dict) -> str:
     rows = sorted(summaries.values(), key=lambda s: s["f1"], reverse=True)
     lines = [
@@ -45,14 +57,16 @@ def _table(summaries: dict) -> str:
     for s in rows:
         lat = s.get("ocr_latency_median_s")
         lines.append(
-            f"| {ENGINE_LABELS.get(s['engine'], s['engine'])} | **{s['f1']:.3f}** | "
+            f"| {_label(s['engine'])} | **{s['f1']:.3f}** | "
             f"{s['precision']:.3f} | {s['recall']:.3f} | {s['perfect_document_rate']:.1%} | "
             f"{s['ocr_value_recall']:.1%} | {lat if lat is not None else '-'} |"
         )
-    n = rows[0]["documents"] if rows else 0
+    counts = sorted({r["documents"] for r in rows})
+    n = f"{counts[-1]} images ({counts[0]} in the row with fewer)" if len(counts) > 1 else (
+        f"{counts[0]} images" if counts else "0 images")
     split = rows[0].get("split", "test") if rows else "test"
     lines.append("")
-    lines.append(f"*{n} images, `{split}` split. \\*The reference row uses the dataset's own "
+    lines.append(f"*{n}, `{split}` split. \\*The reference row uses the dataset's own "
                  "Google Cloud Vision tokens, so it measures the extractor with near-perfect OCR.*")
     return "\n".join(lines)
 
@@ -70,7 +84,7 @@ def _charts(summaries: dict, assets: Path) -> list[Path]:
         fig, ax = plt.subplots(figsize=(6.4, 4.0), dpi=150)
         for s in engines:
             ax.scatter(s["ocr_latency_median_s"], s["f1"], s=80)
-            ax.annotate(ENGINE_LABELS.get(s["engine"], s["engine"]),
+            ax.annotate(_label(s["engine"], short=True),
                         (s["ocr_latency_median_s"], s["f1"]), textcoords="offset points",
                         xytext=(6, 4), fontsize=9)
         ref = summaries.get("gcv")
@@ -95,7 +109,7 @@ def _charts(summaries: dict, assets: Path) -> list[Path]:
         fig, ax = plt.subplots(figsize=(8, 0.55 * len(order) + 1.6), dpi=150)
         im = ax.imshow(data, vmin=0, vmax=1, cmap="viridis", aspect="auto")
         ax.set_xticks(range(len(names)), names, rotation=35, ha="right")
-        ax.set_yticks(range(len(order)), [ENGINE_LABELS.get(e, e) for e in order])
+        ax.set_yticks(range(len(order)), [_label(e, short=True) for e in order])
         for i, row in enumerate(data):
             for j, v in enumerate(row):
                 ax.text(j, i, f"{v:.2f}", ha="center", va="center", fontsize=7,

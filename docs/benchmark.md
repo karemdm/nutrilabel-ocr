@@ -115,7 +115,27 @@ The base engine must already have a `predictions.jsonl` from `benchmark.run`. Pe
 
 The results are a sample of N images chosen as the base engine's worst, so they are not comparable to the full-split numbers (the base engine is biased low on this sample by construction).
 
-Results: see below once run.
+Results (test split, the 10 lowest-scoring images of `ultralytics:s`; the recorded run is `benchmark/results/compare_ultralytics-s_vs_ultralytics-x.json`):
+
+| idx | F1 `ultralytics:s` | F1 `ultralytics:x` | OCR s `s` | OCR s `x` |
+|---:|---:|---:|---:|---:|
+| 48 | 0.000 | 0.000 | 107.1 | 65.7 |
+| 51 | 0.000 | 0.000 | 127.6 | 112.1 |
+| 53 | 0.000 | 0.000 | 68.9 | 55.5 |
+| 61 | 0.000 | 0.000 | 1115.9 | 987.4 |
+| 173 | 0.000 | 0.111 | 142.8 | 125.2 |
+| 184 | 0.000 | 0.125 | 125.1 | 176.0 |
+| 120 | 0.057 | 0.057 | 507.6 | 617.6 |
+| 124 | 0.105 | 0.333 | 344.5 | 290.2 |
+| 21 | 0.118 | 0.286 | 249.7 | 208.2 |
+| 99 | 0.125 | 0.125 | 88.4 | 76.2 |
+| **mean** | **0.041** | **0.104** | 287.8 | 271.4 |
+
+Reading:
+
+- The larger `x` detector raised the F1 of 4 of the 10 images (idx 173, 184, 124 and 21), left the other 6 unchanged, and lowered none. The mean F1 went from 0.041 to 0.104.
+- Four images (idx 48, 51, 53 and 61) stay at 0 with both detectors. For idx 48, 51 and 53 the cached OCR text contains the nutrition values, and the predictions carry the right numbers but under the wrong basis: the gold fields are per 100 g (idx 48 and 53) or per serving (idx 51), and the extractor assigned the opposite one, so every field counts as wrong. This is an extraction (column assignment) problem, not a detector one, which is why a bigger detector cannot fix it. Idx 61 is a very large photo (2236x4160 px, 836 words read) with the table lost among the other text on the pack; the extractor produced only a few low-quality values. These are readings of the cached OCR and predictions, not a controlled ablation.
+- This is a sample of 10 images chosen as the worst cases of the base engine, so it is not comparable to the full-split F1 (0.742): the base engine is biased low on it by construction, and a mean over 10 images is a noisy estimate. OCR time per image is also noisy here (idx 61 alone took about 1000 s with both detectors); these figures are not a speed comparison of the two sizes.
 
 ## Outputs
 
