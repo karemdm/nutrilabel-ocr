@@ -181,7 +181,7 @@ label.jpg  (engine: rapidocr, OCR 0.41s)
 
 | Option | Meaning |
 |---|---|
-| `-e, --engine` | Engine name or `auto` (best installed classic engine) |
+| `-e, --engine` | Engine name or `auto` (first installed classic engine in the preference list) |
 | `--lang en,fr,de` | Languages passed to engines that need them (Tesseract, EasyOCR); default `en,fr,de,es,it,nl,pt` |
 | `--json` / `--with-ocr` | JSON output / include raw OCR words |
 | `--csv FILE` | One row per image with every supported field |
@@ -258,8 +258,12 @@ The image ships Tesseract (7 languages) and RapidOCR.
 Should the project offer several engines or pick one? **Several, behind one parameter.**
 There is no single best engine for every deployment: accuracy, speed, install size,
 hardware (CPU vs GPU) and licence all trade off against each other. The benchmark below
-measures those trade-offs on real photos, and `engine="auto"` follows the measured
-ranking (classic engines only, so `auto` never downloads gigabytes of VLM weights).
+measures those trade-offs on real photos. `engine="auto"` picks the first installed engine
+of a fixed preference list (classic engines only, so `auto` never downloads gigabytes of VLM
+weights). The list favours light, fast, permissively licensed engines: the `ultralytics`
+engine has the highest F1 of the engines measured so far, but it is an optional extra,
+AGPL-3.0 and far slower, so it is last in the list and is chosen only by name
+(`engine="ultralytics"`).
 
 | Engine | Family | Output | Hardware | Licence (code / weights) |
 |---|---|---|---|---|
@@ -343,18 +347,26 @@ OCR latency.
 | Engine | F1 | Precision | Recall | Perfect labels | OCR value recall | OCR s/img |
 |---|---:|---:|---:|---:|---:|---:|
 | Reference OCR (Google Cloud Vision tokens shipped with the dataset)* | **0.834** | 0.887 | 0.787 | 41.9 % | 98.0 % | - |
+| YOLO26-s text detector + PP-OCRv6 recognizer (`ultralytics:s`) | **0.742** | 0.774 | 0.712 | 20.1 % | 95.8 % | 119.0 |
 | `rapidocr` (ONNX, CPU) | **0.730** | 0.856 | 0.636 | 17.6 % | 88.3 % | 5.7 |
 | `doctr` | 0.699 | 0.808 | 0.617 | 18.1 % | 80.6 % | 4.1 |
 | `easyocr` | 0.544 | 0.677 | 0.454 | 6.0 % | 52.3 % | 8.6 |
-| `paddleocr`, `surya`, `tesseract` | run `make benchmark` | | | | | |
+| `paddleocr`, `surya`, `tesseract` | not benchmarked yet: run `make benchmark` | | | | | |
 | `paddleocr-vl`, `olmocr`, `glm-ocr`, `chandra`, ... (GPU) | run `python -m benchmark.run --engines all-vlm` | | | | | |
 
 \* The reference row feeds the dataset's own OCR tokens to the extractor, so it measures
 the **extraction** quality with near-perfect OCR: about 4 out of 5 annotated values are
 recovered, with ~89 % precision, on real photos, without any training. The extractor was
 tuned on the train split only; the test split was held out. The open-source rows were run
-on CPU (OCR time is the median per image); the light `rapidocr` engine gets closest to the
-reference. Other engines can be added by running the benchmark on your machine (it downloads
+on CPU (OCR time is the median per image in seconds, as the benchmark recorded it). Among them,
+`ultralytics:s` has the highest F1 (0.742) thanks to recall: it reads 95.8 % of the annotated
+numbers and recovers more fields (recall 0.712 against 0.636). `rapidocr` is more precise
+(0.856 against 0.774) and its recorded median OCR time is 5.7 s against 119.0 s, so for most uses it
+remains the practical default; the F1 gap between the two is 0.012 on 199 images and was not
+tested for significance. On the 10 worst images of `ultralytics:s`, the larger `ultralytics:x`
+detector raised the F1 of 4 and the mean from 0.041 to 0.104; three of the four images that stay at 0 are
+extraction errors rather than OCR errors
+([details](docs/benchmark.md#hard-image-comparison)). Other engines can be added by running the benchmark on your machine (it downloads
 650 MB of images and the engines' models), which also updates
 [docs/benchmark_results.md](docs/benchmark_results.md) and the charts below.
 
