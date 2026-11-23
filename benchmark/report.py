@@ -2,12 +2,15 @@
 
     python -m benchmark.report                   # markdown table + charts
     python -m benchmark.report --gallery 6       # + annotated real examples and a GIF
+    python -m benchmark.report --gallery 6 --gallery-engine ultralytics:s \
+        --gallery-gif real_examples_ultralytics.gif --gallery-skip 12,22,38
+                                                 # same, from the cached ultralytics:s OCR
 
 Outputs go to ``docs/`` so the README can embed them:
 
 * ``docs/benchmark_results.md`` - results table (paste-ready for the README)
 * ``docs/assets/f1_vs_latency.png`` / ``docs/assets/per_nutrient_f1.png``
-* ``docs/assets/examples/*.jpg`` and ``docs/assets/real_examples.gif`` (``--gallery``)
+* ``docs/assets/examples/*.jpg`` and ``docs/assets/real_examples.gif`` (``--gallery``; ``--gallery-gif`` sets the GIF name)
 """
 
 from __future__ import annotations
@@ -124,7 +127,8 @@ def _charts(summaries: dict, assets: Path) -> list[Path]:
     return made
 
 
-def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> None:
+def _gallery(engine: str, results: Path, assets: Path, n: int, split: str,
+             gif_name: str = "real_examples.gif", skip: frozenset[int] = frozenset()) -> None:
     from PIL import Image
 
     from nutrilabel.extraction.extractor import NutritionExtractor
@@ -143,15 +147,16 @@ def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> No
     frames = []
     extractor = NutritionExtractor()
     for s in iter_hf(split):
-        if s.idx not in good:
+        if s.idx not in good or s.idx in skip:
             continue
+        # cache only: a missing entry is skipped, OCR never runs here
         cache = results / "ocr" / engine.replace(":", "-") / f"{s.idx:05d}.json"
         if not cache.exists():
             continue
         ocr = OCRResult.from_dict(json.loads(cache.read_text(encoding="utf-8")))
         img = draw_result(s.image, extractor.extract(ocr))
         img.thumbnail((1400, 900))
-        path = out_dir / f"{engine}_{s.idx:03d}_{s.meta.get('barcode', '')}.jpg"
+        path = out_dir / f"{engine.replace(':', '-')}_{s.idx:03d}_{s.meta.get('barcode', '')}.jpg"
         img.save(path, quality=88)
         frames.append(img)
         if len(frames) >= n:
@@ -162,9 +167,9 @@ def _gallery(engine: str, results: Path, assets: Path, n: int, split: str) -> No
         canvas = [Image.new("RGB", (w, h), "white") for _ in frames]
         for c, f in zip(canvas, frames):
             c.paste(f, (0, 0))
-        canvas[0].save(assets / "real_examples.gif", save_all=True, append_images=canvas[1:],
+        canvas[0].save(assets / gif_name, save_all=True, append_images=canvas[1:],
                        duration=2200, loop=0, optimize=True)
-        print(f"gallery: {len(frames)} images in {out_dir}, GIF in {assets / 'real_examples.gif'}")
+        print(f"gallery: {len(frames)} images in {out_dir}, GIF in {assets / gif_name}")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -173,6 +178,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--docs", default="docs")
     p.add_argument("--gallery", type=int, default=0, help="number of annotated real examples")
     p.add_argument("--gallery-engine", default=None, help="defaults to the best open-source engine")
+    p.add_argument("--gallery-gif", default="real_examples.gif",
+                   help="file name of the gallery GIF under docs/assets (default: real_examples.gif)")
+    p.add_argument("--gallery-skip", default="",
+                   help="comma-separated sample idx to leave out of the gallery (e.g. blurry or tiny text)")
     args = p.parse_args(argv)
 
     results = Path(args.results)
@@ -192,7 +201,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.gallery and ranking:
         engine = args.gallery_engine or ranking[0]
         split = summaries[engine].get("split", "test")
-        _gallery(engine, results, docs / "assets", args.gallery, split)
+        _gallery(engine, results, docs / "assets", args.gallery, split, args.gallery_gif,
+                 frozenset(int(i) for i in args.gallery_skip.split(",") if i.strip()))
     return 0
 
 

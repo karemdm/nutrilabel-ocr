@@ -378,6 +378,10 @@ Real photos from the test split read by `rapidocr` (values highlighted in the co
 
 <p align="center"><img src="docs/assets/real_examples.gif" alt="Real Open Food Facts photos read by rapidocr" width="820"></p>
 
+The same kind of gallery for the `ultralytics:s` engine (YOLO26-s text detector + PP-OCRv6 recognizer); six test-split photos from its cached benchmark OCR, picked among those it reads without false values (three tiny-text or partly missed photos left out by hand):
+
+<p align="center"><img src="docs/assets/real_examples_ultralytics.gif" alt="Real Open Food Facts photos read by ultralytics:s" width="820"></p>
+
 <sub>Photos: Open Food Facts contributors, via the `openfoodfacts/nutrient-detection-layout` dataset (CC BY-SA 3.0).</sub>
 
 Reproduce everything:
