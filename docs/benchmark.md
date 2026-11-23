@@ -99,9 +99,9 @@ python -m benchmark.report --gallery 6      # plus annotated real examples and a
 | `--max-side` | `1600` | Longest image side fed to the OCR engine |
 | `--out` | `benchmark/results` | Output directory |
 
-OCR output is cached per engine and image under `benchmark/results/ocr/<engine>/<idx>.json` (`idx` zero-padded to five digits). Re-running reads the cache, so extractor changes can be re-scored without repeating OCR; delete the folder to force fresh OCR (and fresh latency). Existing entries in `summary.json` for other engines are kept when you run a subset.
+OCR output is cached per engine and image under `benchmark/results/ocr/<engine>/<idx>.json` (`idx` zero-padded to five digits). For engine variants such as `ultralytics:s` the folder name uses `-` instead of `:` (`ultralytics-s`), because `:` is not valid in Windows paths; the same applies to `predictions.jsonl` and the `compare_*.json` file names. Re-running reads the cache, so extractor changes can be re-scored without repeating OCR; delete the folder to force fresh OCR (and fresh latency). Existing entries in `summary.json` for other engines are kept when you run a subset.
 
-`report.py` options: `--results` (default `benchmark/results`), `--docs` (default `docs`), `--gallery N` and `--gallery-engine` (defaults to the best non-reference engine). It prints a recommended `PREFERENCE` order for `src/nutrilabel/engines/__init__.py`. The gallery skips engines without real boxes (text-only VLMs).
+`report.py` options: `--results` (default `benchmark/results`), `--docs` (default `docs`), `--gallery N`, `--gallery-engine` (defaults to the best non-reference engine), `--gallery-gif` (GIF file name under `docs/assets`, default `real_examples.gif`) and `--gallery-skip` (comma-separated sample idx to leave out, e.g. `12,22,38`). The gallery reads the cached OCR only and never runs an engine. It prints a recommended `PREFERENCE` order for `src/nutrilabel/engines/__init__.py`. The gallery skips engines without real boxes (text-only VLMs).
 
 ## Hard-image comparison
 
@@ -148,7 +148,7 @@ Reading:
 | `docs/benchmark_results.md` | `report` | Results table |
 | `docs/assets/per_nutrient_f1.png` | `report` | Heatmap of F1 per nutrient and engine |
 | `docs/assets/f1_vs_latency.png` | `report` | F1 against median OCR time; drawn only if some engine has a latency |
-| `docs/assets/examples/*.jpg`, `docs/assets/real_examples.gif` | `report --gallery` | Annotated real examples |
+| `docs/assets/examples/*.jpg`, `docs/assets/real_examples.gif` (or the `--gallery-gif` name) | `report --gallery` | Annotated real examples |
 
 ## Current results
 
